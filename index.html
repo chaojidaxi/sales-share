@@ -636,14 +636,14 @@ function generateCardImage(item, callback) {
     else if (sc > 70)  S = 1.10;
     else               S = 1.18;
 
-    // 字号底座（S=1 时）
-    var F_TITLE = 42, LH_TITLE = 58;      // 大标题
-    var F_QUOTE = 31, LH_QUOTE = 50;      // 金句(认知)
-    var F_BODY  = 24, LH_BODY  = 39;      // 正文
-    var F_LABEL = 18;                     // 字段标签
-    var F_BRAND = 26;                     // 品牌
-    var F_FOOT  = 19;                     // 页脚
-    var F_NUM   = 22;                     // 方法编号
+    // 字号底座（S=1 时）—— 微信群分享海报：白底大字报，深色标题是主角
+    var F_TITLE = 50, LH_TITLE = 70;      // 大标题（主角，深色粗体）
+    var F_QUOTE = 29, LH_QUOTE = 48;      // 金句(认知)
+    var F_BODY  = 24, LH_BODY  = 40;      // 正文
+    var F_LABEL = 15, LH_LABEL = 22;      // 小标签
+    var F_BRAND = 22;                     // 品牌
+    var F_FOOT  = 16;                     // 页脚
+    var F_NUM   = 19;                     // 方法编号
 
     // 计算某字体下文本的行数
     function countLines(font, text, width) {
@@ -652,206 +652,202 @@ function generateCardImage(item, callback) {
     }
 
     // ============ 统一布局函数：measure 或 draw ============
-    // draw=true 时真正绘制；否则仅累计高度
+    // 白底大字报风：顶部品牌+日期一行 → 珊瑚红描边分类胶囊 →
+    // 深黑左对齐大标题(主角)+主色短粗线 → 浅珊瑚金句卡 → 场景 →
+    // 方法(主色编号方块) → 举例(浅灰块) → 珊瑚红行动CTA → 复盘 → 页脚。
     function layout(S, draw) {
       var y = 0;
       var g = draw ? ctx : null;
+      var ACCENT = '#e05545';        // 珊瑚红主色
+      var ACCENT_SOFT = '#fdf0ec';   // 金句卡浅底
+      var INK = '#181818';           // 标题
+      var BODY_C = '#3d3a36';        // 正文
+      var SUB = '#6f6a63';           // 次要
+      var FAINT = '#a8a29a';         // 弱提示
+      var LINE_C = '#ececec';        // 分隔线
+      var EX_BG = '#f6f5f4';         // 举例块底
 
-      // --- 顶部眉栏 ---
-      if (draw) drawRule(g, PAD, maxW, y + 14, '#201d19');
-      y += 34 * S;
-      // 眉栏文字（测量时直接用 ctx 算宽）
-      var brandTxt = '每日销售成长分享';
-      ctx.font = '600 ' + Math.round(F_BRAND * S) + 'px ' + F_SERIF;
-      var engTxt = 'DAILY SALES PLAYBOOK · ' + (item.category || '');
-      ctx.font = '600 ' + Math.round(17 * S) + 'px ' + F_SANS;
+      // --- 顶部：圆形logo + 品牌(左) / 日期(右)，细线收尾 ---
+      y += 44 * S;
       if (draw) {
-        var lg = 40 * S; var lh2 = 40 * S; var gap2 = 16 * S;
-        var btW = ctx.measureText(brandTxt).width;
-        var etW = ctx.measureText(engTxt).width;
-        var totalB = lg + gap2 + btW;
-        // 左侧: logo + 品牌
-        var bx = PAD;
-        if (hasLogo) g.drawImage(logoImg, bx, y - 30 * S, 40 * S, 40 * S);
-        bx += lg + gap2;
-        g.font = '600 ' + Math.round(F_BRAND * S) + 'px ' + F_SERIF;
-        g.fillStyle = '#201d19';
-        g.fillText(brandTxt, bx, y);
-        // 右侧: 英文眉
-        g.font = '600 ' + Math.round(17 * S) + 'px ' + F_SANS;
-        g.fillStyle = '#b08a45';
-        var rx = W - PAD - etW;
-        g.fillText(engTxt, rx, y);
-        // 眉下分隔线
-        drawRule(g, PAD, maxW, y + 24 * S, '#efeae0');
-      }
-      y += 46 * S;
-
-      // --- 分类胶囊（居中，墨绿实底）---
-      if (item.category) {
-        var catFont = '600 ' + Math.round(F_LABEL * S) + 'px ' + F_SANS;
-        ctx.font = catFont;
-        var cw = ctx.measureText(item.category).width;
-        var bw = cw + 46 * S, bh = 46 * S, bx2 = (W - bw) / 2;
-        if (draw) {
-          g.fillStyle = '#1c5b46';
-          roundRect(g, bx2, y - 34 * S, bw, bh, bh / 2);
-          g.fill();
-          g.fillStyle = '#ffffff';
-          g.font = catFont;
-          g.fillText(item.category, bx2 + (bw - cw) / 2, y);
+        if (hasLogo) {
+          g.save();
+          g.beginPath(); g.arc(PAD + 18 * S, y - 14 * S, 18 * S, 0, Math.PI * 2); g.closePath(); g.clip();
+          g.drawImage(logoImg, PAD, y - 32 * S, 36 * S, 36 * S);
+          g.restore();
         }
-        y += 30 * S;
-      } else {
-        y += 24 * S;
+        g.font = '600 ' + Math.round(F_BRAND * S) + 'px ' + F_SERIF;
+        g.fillStyle = INK;
+        g.fillText('每日销售成长分享', PAD + 48 * S, y);
+        var dateStr = item.date || '';
+        if (dateStr) {
+          g.font = '400 ' + Math.round(15 * S) + 'px ' + F_SANS;
+          var dw = ctx.measureText(dateStr).width;
+          g.fillStyle = FAINT;
+          g.fillText(dateStr, W - PAD - dw, y);
+        }
+        drawRule(g, PAD, maxW, y + 26 * S, LINE_C);
       }
+      y += 26 * S + 34 * S;
 
-      // --- 标题（居中大头条）---
-      y += 8 * S;
-      var tLines = drawCenteredTitle(ctx, item.title, W, 0, F_TITLE * S, LH_TITLE * S, 1.5, true);
-      if (draw) drawCenteredTitle(g, item.title, W, y, F_TITLE * S, LH_TITLE * S, 1.5, false);
-      y += tLines * LH_TITLE * S;
-      y += 26 * S;
-
-      // --- 标题下点缀线 ---
-      if (draw) { drawRule(g, W / 2 - 34 * S, 68 * S, y, '#b08a45'); }
-      y += 38 * S;
-
-      // --- 字段组 ---
-      function blockLabel(txt, color) {
-        y = drawLabel(ctx, txt, color, PAD, y, F_LABEL * S);
-        y += 10 * S;
-      }
-
-      // 真实场景
-      if (item.scene) {
-        if (draw) drawLabel(g, '真实场景', '#1c5b46', PAD, y, F_LABEL * S);
-        y += (F_LABEL * S) * 1.1 + 12 * S;
-        if (draw) drawParagraph(g, item.scene, '#5c5449', PAD, maxW, y, F_BODY * S, LH_BODY * S);
-        y += countLines('400 ' + (F_BODY * S) + 'px ' + F_SANS, item.scene, maxW) * LH_BODY * S + 16 * S;
-      }
-
-      // 关键认知（浅金引文卡）
-      if (item.insight) {
-        var inLines = countLines('600 ' + (F_QUOTE * S) + 'px ' + F_SERIF, item.insight, maxW - 60 * S);
-        var inPadV = 34 * S, inPadH = 30 * S;
-        // 精确高度：2×垂直内边距 + 引号区(58S) + 文字行(lh×(行-1))
-        var inH = inPadV * 2 + 58 * S + (inLines - 1) * LH_QUOTE * S;
+      // --- 分类胶囊（珊瑚红描边，左对齐，小巧）---
+      if (item.category) {
+        ctx.font = '600 ' + Math.round(16 * S) + 'px ' + F_SANS;
+        var cw2 = ctx.measureText(item.category).width;
+        var bw = cw2 + 38 * S, bh = 38 * S;
         if (draw) {
-          roundStroke(g, PAD, y, maxW, inH, 14, '#f5f0e4', '#e6dcc4');
-          // 大引号
-          g.fillStyle = '#b08a45';
-          g.font = '600 ' + Math.round(60 * S) + 'px ' + F_SERIF;
-          g.fillText('“', PAD + 24 * S, y + inPadV + 34 * S);
-          // 引文文字（baseline 从 inPadV+58S 起）
-          var qx = PAD + inPadH;
-          var iy = y + inPadV + 58 * S;
-          g.fillStyle = '#201d19';
-          g.font = '600 ' + Math.round(F_QUOTE * S) + 'px ' + F_SERIF;
-          wrapText(g, item.insight, maxW - 60 * S).forEach(function(ln) {
-            g.fillText(ln, qx, iy); iy += LH_QUOTE * S;
+          g.strokeStyle = ACCENT; g.lineWidth = 1.6;
+          roundRect(g, PAD, y, bw, bh, bh / 2); g.stroke();
+          g.fillStyle = ACCENT;
+          g.font = '600 ' + Math.round(16 * S) + 'px ' + F_SANS;
+          g.fillText(item.category, PAD + 19 * S, y + 25 * S);
+        }
+        y += bh + 30 * S;
+      }
+
+      // --- 标题（左对齐深黑大粗体，绝对主角）---
+      var tFont = '700 ' + Math.round(F_TITLE * S) + 'px ' + F_SERIF;
+      var tLinesArr = (function() { ctx.font = tFont; return wrapText(ctx, item.title, maxW); })();
+      if (draw) {
+        g.font = tFont; g.fillStyle = INK;
+        var ty = y + F_TITLE * S;
+        tLinesArr.forEach(function(ln) { g.fillText(ln, PAD, ty); ty += LH_TITLE * S; });
+      }
+      y += (tLinesArr.length - 1) * LH_TITLE * S + F_TITLE * S + 18 * S;
+      // 标题下主色短粗线（力量感）
+      if (draw) { g.fillStyle = ACCENT; roundRect(g, PAD + 2, y, 62 * S, 6 * S, 3 * S); g.fill(); }
+      y += 6 * S + 32 * S;
+
+      // --- 关键认知：浅珊瑚金句卡（左竖条+浅底，深色衬线大字）---
+      if (item.insight) {
+        var qFont = '600 ' + Math.round(F_QUOTE * S) + 'px ' + F_SERIF;
+        var qLines = countLines(qFont, item.insight, maxW - 76 * S);
+        var qPadV = 30 * S, qPadH = 36 * S;
+        var qH = qPadV * 2 + (qLines - 1) * LH_QUOTE * S + F_QUOTE * S;
+        if (draw) {
+          roundStroke(g, PAD, y, maxW, qH, 16, ACCENT_SOFT, null);
+          g.fillStyle = ACCENT;
+          roundRect(g, PAD, y, 7, qH, 3); g.fill();
+          g.font = qFont; g.fillStyle = INK;
+          var qy = y + qPadV + F_QUOTE * S;
+          wrapText(g, item.insight, maxW - 76 * S).forEach(function(ln) {
+            g.fillText(ln, PAD + qPadH, qy); qy += LH_QUOTE * S;
           });
         }
-        y += inH + 6 * S;
+        y += qH + 30 * S;
       }
 
-      // 实战方法
+      // --- 真实场景（灰色小标签 + 正文段落）---
+      if (item.scene) {
+        if (draw) {
+          g.font = '600 ' + Math.round(14 * S) + 'px ' + F_SANS;
+          g.fillStyle = FAINT;
+          drawSpacedText(g, '场 景', PAD, y, 2);
+        }
+        y += LH_LABEL * S + 6 * S;
+        if (draw) drawParagraph(g, item.scene, SUB, PAD, maxW, y, F_BODY * S, LH_BODY * S);
+        y += countLines('400 ' + (F_BODY * S) + 'px ' + F_SANS, item.scene, maxW) * LH_BODY * S + 24 * S;
+      }
+
+      // --- 落地方法（主色编号方块 + 深色文字）---
       if (item.methods && item.methods.length) {
-        if (draw) drawLabel(g, '实战方法', '#1c5b46', PAD, y, F_LABEL * S);
-        y += (F_LABEL * S) * 1.1 + 8 * S;
-        var mStart = y;
+        if (draw) {
+          g.font = '700 ' + Math.round(17 * S) + 'px ' + F_SANS;
+          g.fillStyle = INK;
+          g.fillText('落地方法', PAD + 18 * S, y + 4 * S);
+          g.fillStyle = ACCENT;
+          roundRect(g, PAD, y - 10 * S, 8 * S, 8 * S, 2 * S); g.fill();
+        }
+        y += LH_LABEL * S + 18 * S;
         item.methods.forEach(function(m, i) {
           var num = (i < 9 ? '0' : '') + (i + 1);
-          var mLines = countLines('400 ' + (F_BODY * S) + 'px ' + F_SANS, m, maxW - 72 * S);
-          var mH = mLines * LH_BODY * S + 10 * S;
+          var mLines = countLines('400 ' + (F_BODY * S) + 'px ' + F_SANS, m, maxW - 66 * S);
+          var mH = (mLines - 1) * LH_BODY * S + F_BODY * S + 18 * S;
           if (draw) {
-            var mm = y;
-            // 编号圆点(金色)
-            g.fillStyle = '#b08a45';
-            var nr = 23 * S;
-            g.beginPath(); g.arc(PAD + 18 * S, mm + 14 * S, nr, 0, Math.PI * 2); g.fill();
+            var bs = 34 * S;
+            g.fillStyle = ACCENT;
+            roundRect(g, PAD, y, bs, bs, 8 * S); g.fill();
             g.fillStyle = '#ffffff';
-            g.font = '600 ' + Math.round(F_NUM * S) + 'px ' + F_SANS;
+            g.font = '700 ' + Math.round(F_NUM * S) + 'px ' + F_SANS;
             var nw = g.measureText(num).width;
-            g.fillText(num, PAD + 18 * S - nw / 2, mm + 20 * S);
-            // 方法文字
-            g.fillStyle = '#201d19';
+            g.fillText(num, PAD + (bs - nw) / 2, y + bs - 10 * S);
+            g.fillStyle = BODY_C;
             g.font = '400 ' + Math.round(F_BODY * S) + 'px ' + F_SANS;
-            var mx = PAD + 50 * S;
-            var ly = mm + 20 * S;
-            wrapText(g, m, maxW - 72 * S).forEach(function(ln) {
-              g.fillText(ln, mx, ly); ly += LH_BODY * S;
+            var my = y + F_BODY * S + 2 * S;
+            wrapText(g, m, maxW - 66 * S).forEach(function(ln) {
+              g.fillText(ln, PAD + 50 * S, my); my += LH_BODY * S;
             });
           }
-          y += mH;
+          y += Math.max(mH, 34 * S + 18 * S);
         });
-        y += 14 * S;
+        y += 22 * S;
       }
 
-      // 举个例子（细边框块，左侧金色竖条）
+      // --- 举个例子（浅灰块 + 主色小标签）---
       if (item.example) {
-        var exLines = countLines('400 ' + (F_BODY * S) + 'px ' + F_SANS, item.example, maxW - 64 * S);
+        var exLines = countLines('400 ' + (F_BODY * S) + 'px ' + F_SANS, item.example, maxW - 60 * S);
         var exPadV = 26 * S, exPadH = 30 * S;
-        var exH = exPadV * 2 + 44 * S + 8 * S + (exLines - 1) * LH_BODY * S;
+        var exH = exPadV * 2 + LH_LABEL * S + 12 * S + (exLines - 1) * LH_BODY * S + F_BODY * S;
         if (draw) {
-          roundStroke(g, PAD, y, maxW, exH, 10, '#faf7f0', '#efeadf');
-          g.fillStyle = '#1c5b46';
-          roundRect(g, PAD + 0, y + 0, 6, exH, 3); g.fill();
+          roundStroke(g, PAD, y, maxW, exH, 16, EX_BG, null);
           g.font = '600 ' + Math.round(F_LABEL * S) + 'px ' + F_SANS;
-          g.fillStyle = '#1c5b46';
-          drawSpacedText(g, '举个例子', PAD + exPadH, y + exPadV + 8 * S, 4);
-          g.fillStyle = '#201d19';
+          g.fillStyle = ACCENT;
+          g.fillText('举个例子', PAD + exPadH, y + exPadV + F_LABEL * S);
+          g.fillStyle = BODY_C;
           g.font = '400 ' + Math.round(F_BODY * S) + 'px ' + F_SANS;
-          var eiy = y + exPadV + 44 * S + 8 * S;
-          wrapText(g, item.example, maxW - 64 * S).forEach(function(ln) {
+          var eiy = y + exPadV + LH_LABEL * S + 12 * S + F_BODY * S;
+          wrapText(g, item.example, maxW - 60 * S).forEach(function(ln) {
             g.fillText(ln, PAD + exPadH, eiy); eiy += LH_BODY * S;
           });
         }
-        y += exH + 8 * S;
+        y += exH + 26 * S;
       }
 
-      // 今日行动（墨绿实底 CTA 块）
+      // --- 今日行动（珊瑚红实底 CTA）---
       if (item.action) {
-        var acLines = countLines('600 ' + (F_BODY * S) + 'px ' + F_SANS, item.action, maxW - 84 * S);
-        var acPadV = 34 * S, acPadH = 42 * S;
-        var acH = acPadV * 2 + 50 * S + (acLines - 1) * LH_BODY * S;
+        var acLines = countLines('600 ' + (F_BODY * S) + 'px ' + F_SANS, item.action, maxW - 72 * S);
+        var acPadV = 30 * S, acPadH = 36 * S;
+        var acH = acPadV * 2 + LH_LABEL * S + 12 * S + (acLines - 1) * LH_BODY * S + F_BODY * S;
         if (draw) {
-          roundRect(g, PAD, y, maxW, acH, 14);
-          g.fillStyle = '#1c5b46'; g.fill();
-          g.fillStyle = '#cfdfd6';
-          g.font = '600 ' + Math.round(16 * S) + 'px ' + F_SANS;
-          drawSpacedText(g, '▶ 今日行动', PAD + acPadH, y + acPadV + 8 * S, 3);
+          roundRect(g, PAD, y, maxW, acH, 16);
+          g.fillStyle = ACCENT; g.fill();
+          g.fillStyle = 'rgba(255,255,255,0.78)';
+          g.font = '600 ' + Math.round(14 * S) + 'px ' + F_SANS;
+          drawSpacedText(g, '今天就去试', PAD + acPadH, y + acPadV + 14 * S, 2);
           g.fillStyle = '#ffffff';
           g.font = '600 ' + Math.round(F_BODY * S) + 'px ' + F_SANS;
-          var aiy = y + acPadV + 50 * S;
-          wrapText(g, item.action, maxW - 84 * S).forEach(function(ln) {
+          var aiy = y + acPadV + LH_LABEL * S + 12 * S + F_BODY * S;
+          wrapText(g, item.action, maxW - 72 * S).forEach(function(ln) {
             g.fillText(ln, PAD + acPadH, aiy); aiy += LH_BODY * S;
           });
         }
-        y += acH + 10 * S;
+        y += acH + 28 * S;
       }
 
-      // 今日复盘
+      // --- 今日复盘（灰色小标签 + 一段收尾）---
       if (item.review) {
-        var rLines = countLines('400 ' + (F_BODY * S) + 'px ' + F_SANS, item.review, maxW);
-        if (draw) drawLabel(g, '今日复盘', '#1c5b46', PAD, y, F_LABEL * S);
-        y += (F_LABEL * S) * 1.1 + 8 * S;
-        if (draw) drawParagraph(g, item.review, '#3c3731', PAD, maxW, y, F_BODY * S, LH_BODY * S);
-        y += rLines * LH_BODY * S + 20 * S;
+        if (draw) {
+          g.font = '600 ' + Math.round(14 * S) + 'px ' + F_SANS;
+          g.fillStyle = FAINT;
+          drawSpacedText(g, '复 盘', PAD, y, 2);
+        }
+        y += LH_LABEL * S + 6 * S;
+        if (draw) drawParagraph(g, item.review, SUB, PAD, maxW, y, F_BODY * S, LH_BODY * S);
+        y += countLines('400 ' + (F_BODY * S) + 'px ' + F_SANS, item.review, maxW) * LH_BODY * S + 30 * S;
       }
 
-      // --- 底部页脚 ---
-      y += 10 * S;
-      if (draw) drawRule(g, PAD, maxW, y, '#201d19');
-      y += 26 * S;
+      // --- 底部页脚：细线 + 左品牌口号 / 右每日更新 ---
+      if (draw) drawRule(g, PAD, maxW, y, LINE_C);
+      y += 30 * S;
       if (draw) {
-        g.fillStyle = '#b08a45';
-        g.font = '600 ' + Math.round(F_FOOT * S) + 'px ' + F_SANS;
-        var footTxt = '每日销售成长 · 一线实战';
-        var fw = ctx.measureText(footTxt).width;
-        g.fillText(footTxt, (W - fw) / 2, y);
+        g.font = '500 ' + Math.round(F_FOOT * S) + 'px ' + F_SANS;
+        g.fillStyle = FAINT;
+        g.fillText('每日销售成长 · 一线实战', PAD, y);
+        var rt = '每日更新';
+        var rw = ctx.measureText(rt).width;
+        g.fillText(rt, W - PAD - rw, y);
       }
-      y += 16 * S;
+      y += 24 * S;
 
       return y;
     }
@@ -865,7 +861,7 @@ function generateCardImage(item, callback) {
     // 设置画布尺寸并绘制（同一 ctx）
     c.width = W * SCALE; c.height = totalH * SCALE;
     ctx.setTransform(SCALE, 0, 0, SCALE, 0, 0);
-    ctx.fillStyle = '#f6f3ec';
+    ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, W, totalH);
     layout(S, true);
 
