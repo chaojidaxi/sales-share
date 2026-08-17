@@ -249,6 +249,16 @@ body::before {
   .insight { font-size: 19px; }
   .content { padding-top: 30px; }
 }
+
+/* ===== 卡片保存弹层 ===== */
+.card-modal { position: fixed; inset: 0; z-index: 9999; display: none; }
+.card-modal.show { display: block; }
+.cm-mask { position: absolute; inset: 0; background: rgba(20,18,15,0.6); backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px); }
+.cm-box { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; }
+.cm-img { max-width: 94%; max-height: 76vh; border-radius: 14px; box-shadow: 0 24px 70px rgba(0,0,0,0.45); background: #fff; }
+.cm-tip { color: #fff; font-size: 14px; margin-top: 18px; letter-spacing: 2px; }
+.cm-close { margin-top: 12px; border: 1px solid rgba(255,255,255,0.5); color: #fff; background: transparent; border-radius: 100px; padding: 8px 30px; font-size: 14px; cursor: pointer; transition: all 0.2s; }
+.cm-close:hover { background: rgba(255,255,255,0.15); }
 </style>
 </head>
 <body>
@@ -374,29 +384,8 @@ function renderCard(item) {
     (item.action ? '<div class="action"><span class="k">今日行动</span>' + esc(item.action) + '</div>' : '') +
     (item.review ? '<p class="review"><span class="k">今日复盘</span>' + esc(item.review) + '</p>' : '') +
     '<div class="foot-rule"></div>' +
-    '<button class="copy-btn" data-idx="' + item.__idx + '">复制全文</button>' +
+    '<button class="copy-btn" data-idx="' + item.__idx + '">保存卡片</button>' +
     '</article>';
-}
-
-function plainText(item) {
-  var lines = [];
-  lines.push('【今日销售分享】');
-  lines.push('');
-  lines.push(item.title);
-  lines.push('');
-  lines.push('场景：' + item.scene);
-  lines.push('');
-  lines.push('关键认知：' + item.insight);
-  lines.push('');
-  lines.push('实战方法：');
-  (item.methods || []).forEach(function(m, i) { lines.push((i + 1) + '. ' + m); });
-  lines.push('');
-  lines.push('举个例子：' + item.example);
-  lines.push('');
-  lines.push('今日行动：' + item.action);
-  lines.push('');
-  lines.push('今日复盘：' + item.review);
-  return lines.join('\n');
 }
 
 var ALL = [];
@@ -435,25 +424,195 @@ document.getElementById('content').addEventListener('click', function(e) {
   var idx = parseInt(btn.getAttribute('data-idx'), 10);
   var item = ALL[idx];
   if (!item) return;
-  var text = plainText(item);
-  function done() {
-    btn.textContent = '已复制';
-    btn.classList.add('done');
-    setTimeout(function() { btn.textContent = '复制全文'; btn.classList.remove('done'); }, 1600);
-  }
-  if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(text).then(done).catch(function() { fallbackCopy(text); done(); });
-  } else {
-    fallbackCopy(text); done();
-  }
+  btn.textContent = '生成中…';
+  setTimeout(function() {
+    try {
+      generateCardImage(item, function(dataUrl) {
+        btn.textContent = '保存卡片';
+        showCardModal(dataUrl, item.title);
+      });
+    } catch (err) {
+      btn.textContent = '保存卡片';
+    }
+  }, 30);
 });
 
-function fallbackCopy(text) {
-  var ta = document.createElement('textarea');
-  ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
-  document.body.appendChild(ta); ta.select();
-  try { document.execCommand('copy'); } catch (e) {}
-  document.body.removeChild(ta);
+var F_SERIF = "'Noto Serif SC', Georgia, 'Songti SC', 'SimSun', serif";
+var F_SANS = "-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Hiragino Sans GB', sans-serif";
+
+function wrapText(ctx, text, maxWidth) {
+  var chars = String(text).split('');
+  var lines = [], line = '';
+  for (var i = 0; i < chars.length; i++) {
+    var t = line + chars[i];
+    if (ctx.measureText(t).width > maxWidth && line) { lines.push(line); line = chars[i]; }
+    else { line = t; }
+  }
+  if (line) lines.push(line);
+  return lines;
+}
+
+function drawLabel(ctx, text, color, x, y) {
+  ctx.fillStyle = color;
+  ctx.font = '700 23px ' + F_SANS;
+  ctx.fillText(text, x, y);
+  return y + 42;
+}
+
+function drawParagraph(ctx, text, color, x, maxW, y, size, lineH, italic) {
+  ctx.fillStyle = color;
+  ctx.font = (italic ? 'italic ' : '') + '400 ' + size + 'px ' + F_SANS;
+  var lines = wrapText(ctx, text, maxW);
+  lines.forEach(function(ln) { ctx.fillText(ln, x, y); y += lineH; });
+  return y;
+}
+
+function generateCardImage(item, callback) {
+  var W = 750, PAD = 56, maxW = W - PAD * 2;
+  var c = document.createElement('canvas');
+  c.width = W;
+  c.height = 4000;
+  var ctx = c.getContext('2d');
+  var y = 0;
+
+  ctx.fillStyle = '#f6f3ec';
+  ctx.fillRect(0, 0, W, 4000);
+
+  // 顶部装饰
+  y = 76;
+  ctx.strokeStyle = '#b08a45'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(W / 2 - 72, y); ctx.lineTo(W / 2 + 72, y); ctx.stroke();
+  y += 44;
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#1c5b46'; ctx.font = '600 21px ' + F_SANS;
+  ctx.fillText('每日销售成长分享', W / 2, y);
+  y += 38;
+  ctx.fillStyle = '#a69d90'; ctx.font = '400 21px ' + F_SANS;
+  ctx.fillText(item.date || '', W / 2, y);
+  y += 70;
+  ctx.textAlign = 'left';
+
+  // 分类标签
+  ctx.fillStyle = '#1c5b46'; ctx.font = '600 25px ' + F_SANS;
+  ctx.fillText('· ' + (item.category || ''), PAD, y);
+  y += 50;
+
+  // 标题
+  ctx.fillStyle = '#201d19'; ctx.font = '600 46px ' + F_SERIF;
+  var tls = wrapText(ctx, item.title, maxW);
+  tls.forEach(function(ln) { ctx.fillText(ln, PAD, y); y += 66; });
+  y += 18;
+
+  // 分隔线
+  ctx.strokeStyle = '#e7e1d6'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(PAD, y); ctx.lineTo(W - PAD, y); ctx.stroke();
+  y += 48;
+
+  // 真实场景
+  if (item.scene) {
+    y = drawLabel(ctx, '真实场景', '#1c5b46', PAD, y);
+    y = drawParagraph(ctx, item.scene, '#6b6359', PAD, maxW, y, 27, 46) + 30;
+  }
+
+  // 关键认知（金句 + 金色竖线）
+  if (item.insight) {
+    y = drawLabel(ctx, '关键认知', '#b08a45', PAD, y);
+    var qx = PAD + 24;
+    var y0 = y;
+    ctx.fillStyle = '#201d19'; ctx.font = '600 34px ' + F_SERIF;
+    var ils = wrapText(ctx, item.insight, maxW - 24);
+    ils.forEach(function(ln) { ctx.fillText(ln, qx, y); y += 56; });
+    ctx.fillStyle = '#b08a45';
+    ctx.fillRect(PAD, y0 - 6, 4, (y - y0) + 8);
+    y += 32;
+  }
+
+  // 实战方法
+  if (item.methods && item.methods.length) {
+    y = drawLabel(ctx, '实战方法', '#1c5b46', PAD, y);
+    item.methods.forEach(function(m, i) {
+      var num = (i < 9 ? '0' : '') + (i + 1);
+      ctx.fillStyle = '#b08a45'; ctx.font = '600 25px ' + F_SERIF;
+      ctx.fillText(num, PAD, y);
+      ctx.fillStyle = '#201d19'; ctx.font = '400 27px ' + F_SANS;
+      var mls = wrapText(ctx, m, maxW - 74);
+      mls.forEach(function(ln, j) {
+        ctx.fillText(ln, PAD + 74, y);
+        y += j < mls.length - 1 ? 44 : 50;
+      });
+    });
+    y += 24;
+  }
+
+  // 举个例子（浅底块）
+  if (item.example) {
+    ctx.font = '400 26px ' + F_SANS;
+    var exLines = wrapText(ctx, item.example, maxW - 22);
+    var exH = 22 + 42 + exLines.length * 44 + 26;
+    ctx.fillStyle = '#fbf9f4';
+    ctx.fillRect(PAD, y, maxW, exH);
+    ctx.strokeStyle = '#efeae0'; ctx.lineWidth = 1;
+    ctx.strokeRect(PAD + 0.5, y + 0.5, maxW - 1, exH - 1);
+    y += 22;
+    y = drawLabel(ctx, '举个例子', '#1c5b46', PAD + 22, y);
+    y = drawParagraph(ctx, item.example, '#6b6359', PAD + 22, maxW - 22, y, 26, 44);
+    y += 32;
+  }
+
+  // 今日行动（墨绿浅底块）
+  if (item.action) {
+    ctx.font = '400 27px ' + F_SANS;
+    var acLines = wrapText(ctx, item.action, maxW - 22);
+    var acH = 22 + 42 + acLines.length * 44 + 26;
+    ctx.fillStyle = '#eef3ef';
+    ctx.fillRect(PAD, y, maxW, acH);
+    ctx.fillStyle = '#1c5b46';
+    ctx.fillRect(PAD, y, 4, acH);
+    y += 22;
+    y = drawLabel(ctx, '今日行动', '#1c5b46', PAD + 22, y);
+    y = drawParagraph(ctx, item.action, '#1c5b46', PAD + 22, maxW - 22, y, 27, 44);
+    y += 32;
+  }
+
+  // 今日复盘
+  if (item.review) {
+    y = drawLabel(ctx, '今日复盘', '#1c5b46', PAD, y);
+    y = drawParagraph(ctx, item.review, '#201d19', PAD, maxW, y, 27, 46, true);
+    y += 20;
+  }
+
+  // 底部
+  y += 10;
+  ctx.strokeStyle = '#e7e1d6'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(PAD, y); ctx.lineTo(W - PAD, y); ctx.stroke();
+  y += 36;
+  ctx.fillStyle = '#a69d90'; ctx.font = '400 20px ' + F_SANS;
+  ctx.fillText('一线销售成长 · 每日一篇', PAD, y);
+
+  var finalH = y + 56;
+  var fc = document.createElement('canvas');
+  fc.width = W; fc.height = finalH;
+  var fctx = fc.getContext('2d');
+  fctx.drawImage(c, 0, 0, W, finalH, 0, 0, W, finalH);
+  callback(fc.toDataURL('image/png'));
+}
+
+function showCardModal(dataUrl, title) {
+  var modal = document.getElementById('cardModal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'cardModal';
+    modal.className = 'card-modal';
+    modal.innerHTML = '<div class="cm-mask"></div><div class="cm-box"><img class="cm-img" alt="分享卡片"><div class="cm-tip">长按图片保存到相册</div><button class="cm-close">关闭</button></div>';
+    document.body.appendChild(modal);
+    modal.querySelector('.cm-mask').addEventListener('click', function() { modal.classList.remove('show'); });
+    modal.querySelector('.cm-close').addEventListener('click', function() { modal.classList.remove('show'); });
+  }
+  modal.querySelector('.cm-img').src = dataUrl;
+  modal.classList.add('show');
+  var a = document.createElement('a');
+  a.href = dataUrl; a.download = (title || '销售成长分享') + '.png';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
 }
 
 fetchData();
