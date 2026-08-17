@@ -13,20 +13,20 @@
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 :root {
-  --paper: #f6f3ec;
-  --paper-2: #fbf9f4;
+  --paper: #fafaf9;
+  --paper-2: #f6f5f4;
   --card: #ffffff;
   --ink: #201d19;
   --ink-2: #57514a;
   --ink-3: #756a58;
-  --accent: #1c5b46;
-  --accent-deep: #143f31;
-  --accent-soft: #eef3ef;
-  --gold: #b08a45;
-  --line: #e7e1d6;
-  --line-soft: #efeae0;
+  --accent: #e05545;
+  --accent-deep: #c24335;
+  --accent-soft: #fdf0ec;
+  --gold: #e05545;
+  --line: #e8e6e3;
+  --line-soft: #f0efed;
   --shadow: 0 1px 2px rgba(32,29,25,0.03), 0 8px 26px rgba(32,29,25,0.05);
-  --shadow-hover: 0 2px 6px rgba(32,29,25,0.05), 0 22px 52px rgba(28,91,70,0.12);
+  --shadow-hover: 0 2px 6px rgba(32,29,25,0.05), 0 22px 52px rgba(224,85,69,0.12);
 }
 
 html { scroll-behavior: smooth; }
@@ -122,7 +122,7 @@ body::before {
 .chip:hover { color: var(--accent); border-color: var(--gold); transform: translateY(-1px); }
 .chip.active {
   background: var(--accent); color: #fff; font-weight: 600; border-color: var(--accent);
-  box-shadow: 0 4px 12px rgba(28,91,70,0.28);
+  box-shadow: 0 4px 12px rgba(224,85,69,0.26);
 }
 .chip-count {
   display: inline-block; min-width: 17px; height: 17px; line-height: 17px;
@@ -176,10 +176,10 @@ body::before {
   background: var(--accent); color: #fff;
   padding: 12px 22px; font-size: 14px; font-weight: 600; cursor: pointer;
   transition: all 0.22s cubic-bezier(0.16,1,0.3,1); letter-spacing: 1px;
-  box-shadow: 0 4px 14px rgba(28,91,70,0.28);
+  box-shadow: 0 4px 14px rgba(224,85,69,0.26);
 }
 .copy-btn::before { content: ""; width: 15px; height: 15px; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='9' y='9' width='11' height='11' rx='2'/%3E%3Cpath d='M5 15V5a2 2 0 0 1 2-2h10'/%3E%3C/svg%3E") center/contain no-repeat; }
-.copy-btn:hover { background: var(--accent-deep); transform: translateY(-1px); box-shadow: 0 6px 18px rgba(28,91,70,0.32); }
+.copy-btn:hover { background: var(--accent-deep); transform: translateY(-1px); box-shadow: 0 6px 18px rgba(224,85,69,0.30); }
 .copy-btn.done { background: var(--accent-deep); }
 .copy-btn.done::before { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6L9 17l-5-5'/%3E%3C/svg%3E"); }
 
@@ -468,9 +468,14 @@ var F_SANS = "-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Hiragino Sans G
 function wrapText(ctx, text, maxWidth) {
   var chars = String(text).split('');
   var lines = [], line = '';
+  var noStart = '，。！？；：”’』》〉、%…';  // 闭合/跟随标点：不允许出现在行首
   for (var i = 0; i < chars.length; i++) {
     var t = line + chars[i];
-    if (ctx.measureText(t).width > maxWidth && line) { lines.push(line); line = chars[i]; }
+    if (ctx.measureText(t).width > maxWidth && line) {
+      // 行首避标点：闭合标点留在上一行（允许轻微超宽）
+      if (noStart.indexOf(chars[i]) >= 0) { lines.push(t); line = ''; continue; }
+      lines.push(line); line = chars[i];
+    }
     else { line = t; }
   }
   if (line) lines.push(line);
@@ -587,7 +592,7 @@ function drawBadge(ctx, text, x, y, size) {
   var tw = ctx.measureText(text).width;
   var bw = tw + 38 * (s / 19);
   var bh = 40 * (s / 19);
-  ctx.fillStyle = '#1c5b46';
+  ctx.fillStyle = '#e05545';
   roundRect(ctx, x, y - 31 * (s / 19), bw, bh, 20 * (s / 19));
   ctx.fill();
   ctx.fillStyle = '#ffffff';
@@ -708,6 +713,12 @@ function generateCardImage(item, callback) {
       // --- 标题（左对齐深黑大粗体，绝对主角）---
       var tFont = '700 ' + Math.round(F_TITLE * S) + 'px ' + F_SERIF;
       var tLinesArr = (function() { ctx.font = tFont; return wrapText(ctx, item.title, maxW); })();
+      // 孤字平衡：末行 ≤2 字时收窄宽度重排，避免单字独占一行
+      if (tLinesArr.length > 1 && tLinesArr[tLinesArr.length - 1].length <= 2) {
+        ctx.font = tFont;
+        var t2 = wrapText(ctx, item.title, maxW - F_TITLE * S * 2.6);
+        if (t2.length === tLinesArr.length && t2[t2.length - 1].length > 2) tLinesArr = t2;
+      }
       if (draw) {
         g.font = tFont; g.fillStyle = INK;
         var ty = y + F_TITLE * S;
