@@ -431,13 +431,32 @@ function drawSpacedText(ctx, text, x, y, spacing) {
   return cx;
 }
 
+// 字段标签：金色短竖线 + 字距小标签（左对齐）
 function drawLabel(ctx, text, color, x, y, size) {
   var s = size || 19;
   ctx.fillStyle = color;
   ctx.fillRect(x, y - 13 * (s / 19), 4, 18 * (s / 19));
-  ctx.font = '700 ' + Math.round(s) + 'px ' + F_SANS;
-  drawSpacedText(ctx, text, x + 15 * (s / 19), y, 4);
+  ctx.font = '600 ' + Math.round(s) + 'px ' + F_SANS;
+  drawSpacedText(ctx, text, x + 16 * (s / 19), y, 4);
   return y + 42 * (s / 19);
+}
+
+// 眉栏小标签（居中，正文上方，用于"栏目眉"）
+function drawEyebrow(ctx, text, x, y, size, color) {
+  var s = size || 18;
+  ctx.fillStyle = color;
+  ctx.font = '600 ' + Math.round(s) + 'px ' + F_SANS;
+  var w = ctx.measureText(text).width;
+  drawSpacedText(ctx, text, x + (W ? 0 : 0), y, 4);
+  return { w: w };
+}
+function eyebrowCenter(ctx, text, W, y, s, color) {
+  ctx.fillStyle = color;
+  ctx.font = '600 ' + Math.round(s) + 'px ' + F_SANS;
+  var w = ctx.measureText(text).width;
+  var total = w + 6 * (String(text).length - 1);
+  var x = (W - total) / 2;
+  return drawSpacedText(ctx, text, x, y, 4);
 }
 
 function drawTitle(ctx, text, x, y, maxW, size, lineH, spacing, extra, measureOnly) {
@@ -458,6 +477,32 @@ function drawTitle(ctx, text, x, y, maxW, size, lineH, spacing, extra, measureOn
     if (cx + w > x + maxW && cx > x) { cx = x; y += lh; }
     ctx.fillText(ch, cx, y);
     cx += w;
+  });
+  return y;
+}
+
+// 居中标题：逐字居中排布（杂志头条式）
+function drawCenteredTitle(ctx, text, W, y, size, lineH, spacing, measureOnly) {
+  var sz = size, lh = lineH, sp = spacing;
+  ctx.font = '600 ' + Math.round(sz) + 'px ' + F_SERIF;
+  var chars = String(text).split('');
+  var linesArr = [];
+  var cur = [];
+  var maxW = W - 2 * 56;
+  var cx = 0;
+  chars.forEach(function(ch) {
+    var w = ctx.measureText(ch).width + sp;
+    if (cx + w > maxW && cur.length) { linesArr.push(cur); cur = []; cx = 0; }
+    cur.push(ch); cx += w;
+  });
+  if (cur.length) linesArr.push(cur);
+  if (measureOnly) return linesArr.length;
+  linesArr.forEach(function(lineChars) {
+    var lw = 0;
+    lineChars.forEach(function(c) { lw += ctx.measureText(c).width + sp; });
+    var sx = (W - lw) / 2;
+    lineChars.forEach(function(c) { ctx.fillText(c, sx, y); sx += ctx.measureText(c).width + sp; });
+    y += lh;
   });
   return y;
 }
@@ -486,245 +531,290 @@ function drawBadge(ctx, text, x, y, size) {
   var tw = ctx.measureText(text).width;
   var bw = tw + 38 * (s / 19);
   var bh = 40 * (s / 19);
-  ctx.fillStyle = '#eef3ef';
+  ctx.fillStyle = '#1c5b46';
   roundRect(ctx, x, y - 31 * (s / 19), bw, bh, 20 * (s / 19));
   ctx.fill();
-  ctx.fillStyle = '#1c5b46';
+  ctx.fillStyle = '#ffffff';
   ctx.fillText(text, x + 19 * (s / 19), y);
   return y + 52 * (s / 19);
 }
 
+// 双线分隔（页脚）
+function drawRule(ctx, x, w, y, color) {
+  ctx.strokeStyle = color; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + w, y); ctx.stroke();
+}
+
+// 圆角空心块（金句卡/举例）
+function roundStroke(ctx, x, y, w, h, r, fill, stroke) {
+  roundRect(ctx, x, y, w, h, r);
+  if (fill) { ctx.fillStyle = fill; ctx.fill(); }
+  if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = 1; ctx.stroke(); }
+}
+
 function generateCardImage(item, callback) {
   function run(logoImg) {
-    var W = 750, PAD = 56, maxW = W - PAD * 2;
+    var W = 750, PAD = 60, maxW = W - PAD * 2;
     var SCALE = 2;
     var ctx = document.createElement('canvas').getContext('2d');
+    var hasLogo = logoImg && logoImg.naturalWidth > 0;
 
-    // ===== 自适应排版引擎：根据内容多少自动缩放字号与行距 =====
-    // 设计底座：标题44 / 金句32 / 正文25 / 标签19 / 徽章19 / 品牌28
-    // S 为整体密度系数：内容少→S 偏大（字号大、留白多）；内容多→S 偏小（字号小、更紧凑）
-    // 所有尺寸都由基地值 × S 派生，比例恒定，排版始终协调
-
-    function countLines(font, text, width) {
-      ctx.font = font;
-      return wrapText(ctx, text, width).length;
-    }
-
-    // 估算某一 S 下卡片总高度
-    function measureHeight(S) {
-      var h = 0;
-      // 头部：logo 行
-      h += 96 * S;
-      h += 64 * S;                        // brand 下方间隔
-
-      // 分类徽章
-      h += item.category ? 52 * S : 40 * S;
-
-      // 标题
-      h += drawTitle(ctx, item.title, 0, 0, maxW, 44 * S, 62 * S, 2, 0, true).lines * 62 * S;
-      h += 22 * S;
-
-      // 分隔线 + 间隔
-      h += 48 * S;
-
-      // 真实场景
-      if (item.scene) {
-        h += 42 * S;                       // 标签行
-        h += countLines('400 ' + (25 * S) + 'px ' + F_SANS, item.scene, maxW) * 40 * S + 26 * S;
-      }
-
-      // 关键认知
-      if (item.insight) {
-        h += 42 * S;
-        h += countLines('600 ' + (32 * S) + 'px ' + F_SERIF, item.insight, maxW - 42 * S) * 52 * S + 30 * S;
-      }
-
-      // 实战方法
-      if (item.methods && item.methods.length) {
-        h += 42 * S;
-        item.methods.forEach(function(m) {
-          var n = countLines('400 ' + (25 * S) + 'px ' + F_SANS, m, maxW - 70 * S);
-          h += n * 40 * S + 4 * S;
-        });
-        h += 20 * S;
-      }
-
-      // 举个例子（含块内边距 + 标签）
-      if (item.example) {
-        h += 20 * S + 48 * S + countLines('400 ' + (25 * S) + 'px ' + F_SANS, item.example, maxW - 22) * 40 * S + 28 * S;
-      }
-
-      // 今日行动
-      if (item.action) {
-        h += 20 * S + 48 * S + countLines('400 ' + (25 * S) + 'px ' + F_SANS, item.action, maxW - 22) * 40 * S + 28 * S;
-      }
-
-      // 今日复盘
-      if (item.review) {
-        h += 42 * S;
-        h += countLines('400 ' + (25 * S) + 'px ' + F_SANS, item.review, maxW) * 40 * S + 16 * S;
-      }
-
-      // 底部
-      h += 10 * S + 36 * S + 96 * S;
-
-      return h;
-    }
-
-    // 内容多寡评分（总字符数，权重不同的字段）
+    // ============ 内容多寡评分 → 密度系数 S ============
     function contentScore() {
       var s = 0;
       s += (item.title || '').length * 2;
-      s += (item.scene || '').length;
-      s += (item.insight || '').length * 1.3;
+      s += (item.scene || '') ? (item.scene.length * 1.1) : 0;
+      s += (item.insight || '').length * 1.4;
       (item.methods || []).forEach(function(m) { s += m.length; });
       s += (item.example || '').length;
       s += (item.action || '').length;
       s += (item.review || '').length;
       return s;
     }
+    var S = 1.0, sc = contentScore();
+    if (sc > 330)      S = 0.78;
+    else if (sc > 250) S = 0.86;
+    else if (sc > 180) S = 0.94;
+    else if (sc > 120) S = 1.02;
+    else if (sc > 70)  S = 1.10;
+    else               S = 1.18;
 
-    // 候选密度系数：从小(紧凑)到大(宽松)
-    var S = 1.0;
-    var score = contentScore();
-    if (score > 320)      S = 0.80;
-    else if (score > 240) S = 0.88;
-    else if (score > 170) S = 0.96;
-    else if (score > 110) S = 1.04;
-    else                  S = 1.12;
+    // 字号底座（S=1 时）
+    var F_TITLE = 42, LH_TITLE = 58;      // 大标题
+    var F_QUOTE = 31, LH_QUOTE = 50;      // 金句(认知)
+    var F_BODY  = 24, LH_BODY  = 39;      // 正文
+    var F_LABEL = 18;                     // 字段标签
+    var F_BRAND = 26;                     // 品牌
+    var F_FOOT  = 19;                     // 页脚
+    var F_NUM   = 22;                     // 方法编号
 
-    // 面积上限保护：iOS canvas 有像素面积上限，内容过长时把字号压到最小档并锁定
-    // 1500px 宽 × totalH×2 高 ≤ 约 1670 万 → 逻辑高 totalH ≤ 5100
-    var MAX_H = 5100;
-    function guardH(h) { return SCALE * h * 1500 <= 16700000 ? h : Math.min(h, MAX_H); }
+    // 计算某字体下文本的行数
+    function countLines(font, text, width) {
+      ctx.font = font;
+      return wrapText(ctx, text, width).length;
+    }
 
-    // ===== 开始绘制 =====
-    var totalH = Math.round(measureHeight(S));
-    if (totalH > MAX_H) { S = 0.70; totalH = Math.round(measureHeight(S)); }
-    if (totalH > MAX_H) totalH = MAX_H;     // 极端情况兜底，避免白屏
+    // ============ 统一布局函数：measure 或 draw ============
+    // draw=true 时真正绘制；否则仅累计高度
+    function layout(S, draw) {
+      var y = 0;
+      var g = draw ? ctx : null;
+
+      // --- 顶部眉栏 ---
+      if (draw) drawRule(g, PAD, maxW, y + 14, '#201d19');
+      y += 34 * S;
+      // 眉栏文字（测量时直接用 ctx 算宽）
+      var brandTxt = '每日销售成长分享';
+      ctx.font = '600 ' + Math.round(F_BRAND * S) + 'px ' + F_SERIF;
+      var engTxt = 'DAILY SALES PLAYBOOK · ' + (item.category || '');
+      ctx.font = '600 ' + Math.round(17 * S) + 'px ' + F_SANS;
+      if (draw) {
+        var lg = 40 * S; var lh2 = 40 * S; var gap2 = 16 * S;
+        var btW = ctx.measureText(brandTxt).width;
+        var etW = ctx.measureText(engTxt).width;
+        var totalB = lg + gap2 + btW;
+        // 左侧: logo + 品牌
+        var bx = PAD;
+        if (hasLogo) g.drawImage(logoImg, bx, y - 30 * S, 40 * S, 40 * S);
+        bx += lg + gap2;
+        g.font = '600 ' + Math.round(F_BRAND * S) + 'px ' + F_SERIF;
+        g.fillStyle = '#201d19';
+        g.fillText(brandTxt, bx, y);
+        // 右侧: 英文眉
+        g.font = '600 ' + Math.round(17 * S) + 'px ' + F_SANS;
+        g.fillStyle = '#b08a45';
+        var rx = W - PAD - etW;
+        g.fillText(engTxt, rx, y);
+        // 眉下分隔线
+        drawRule(g, PAD, maxW, y + 24 * S, '#efeae0');
+      }
+      y += 46 * S;
+
+      // --- 分类胶囊（居中，墨绿实底）---
+      if (item.category) {
+        var catFont = '600 ' + Math.round(F_LABEL * S) + 'px ' + F_SANS;
+        ctx.font = catFont;
+        var cw = ctx.measureText(item.category).width;
+        var bw = cw + 46 * S, bh = 46 * S, bx2 = (W - bw) / 2;
+        if (draw) {
+          g.fillStyle = '#1c5b46';
+          roundRect(g, bx2, y - 34 * S, bw, bh, bh / 2);
+          g.fill();
+          g.fillStyle = '#ffffff';
+          g.font = catFont;
+          g.fillText(item.category, bx2 + (bw - cw) / 2, y);
+        }
+        y += 30 * S;
+      } else {
+        y += 24 * S;
+      }
+
+      // --- 标题（居中大头条）---
+      y += 8 * S;
+      var tLines = drawCenteredTitle(ctx, item.title, W, 0, F_TITLE * S, LH_TITLE * S, 1.5, true);
+      if (draw) drawCenteredTitle(g, item.title, W, y, F_TITLE * S, LH_TITLE * S, 1.5, false);
+      y += tLines * LH_TITLE * S;
+      y += 26 * S;
+
+      // --- 标题下点缀线 ---
+      if (draw) { drawRule(g, W / 2 - 34 * S, 68 * S, y, '#b08a45'); }
+      y += 38 * S;
+
+      // --- 字段组 ---
+      function blockLabel(txt, color) {
+        y = drawLabel(ctx, txt, color, PAD, y, F_LABEL * S);
+        y += 10 * S;
+      }
+
+      // 真实场景
+      if (item.scene) {
+        if (draw) drawLabel(g, '真实场景', '#1c5b46', PAD, y, F_LABEL * S);
+        y += (F_LABEL * S) * 1.1 + 12 * S;
+        if (draw) drawParagraph(g, item.scene, '#5c5449', PAD, maxW, y, F_BODY * S, LH_BODY * S);
+        y += countLines('400 ' + (F_BODY * S) + 'px ' + F_SANS, item.scene, maxW) * LH_BODY * S + 16 * S;
+      }
+
+      // 关键认知（浅金引文卡）
+      if (item.insight) {
+        var inLines = countLines('600 ' + (F_QUOTE * S) + 'px ' + F_SERIF, item.insight, maxW - 60 * S);
+        var inPadV = 34 * S, inPadH = 30 * S;
+        // 精确高度：2×垂直内边距 + 引号区(58S) + 文字行(lh×(行-1))
+        var inH = inPadV * 2 + 58 * S + (inLines - 1) * LH_QUOTE * S;
+        if (draw) {
+          roundStroke(g, PAD, y, maxW, inH, 14, '#f5f0e4', '#e6dcc4');
+          // 大引号
+          g.fillStyle = '#b08a45';
+          g.font = '600 ' + Math.round(60 * S) + 'px ' + F_SERIF;
+          g.fillText('“', PAD + 24 * S, y + inPadV + 34 * S);
+          // 引文文字（baseline 从 inPadV+58S 起）
+          var qx = PAD + inPadH;
+          var iy = y + inPadV + 58 * S;
+          g.fillStyle = '#201d19';
+          g.font = '600 ' + Math.round(F_QUOTE * S) + 'px ' + F_SERIF;
+          wrapText(g, item.insight, maxW - 60 * S).forEach(function(ln) {
+            g.fillText(ln, qx, iy); iy += LH_QUOTE * S;
+          });
+        }
+        y += inH + 6 * S;
+      }
+
+      // 实战方法
+      if (item.methods && item.methods.length) {
+        if (draw) drawLabel(g, '实战方法', '#1c5b46', PAD, y, F_LABEL * S);
+        y += (F_LABEL * S) * 1.1 + 8 * S;
+        var mStart = y;
+        item.methods.forEach(function(m, i) {
+          var num = (i < 9 ? '0' : '') + (i + 1);
+          var mLines = countLines('400 ' + (F_BODY * S) + 'px ' + F_SANS, m, maxW - 72 * S);
+          var mH = mLines * LH_BODY * S + 10 * S;
+          if (draw) {
+            var mm = y;
+            // 编号圆点(金色)
+            g.fillStyle = '#b08a45';
+            var nr = 23 * S;
+            g.beginPath(); g.arc(PAD + 18 * S, mm + 14 * S, nr, 0, Math.PI * 2); g.fill();
+            g.fillStyle = '#ffffff';
+            g.font = '600 ' + Math.round(F_NUM * S) + 'px ' + F_SANS;
+            var nw = g.measureText(num).width;
+            g.fillText(num, PAD + 18 * S - nw / 2, mm + 20 * S);
+            // 方法文字
+            g.fillStyle = '#201d19';
+            g.font = '400 ' + Math.round(F_BODY * S) + 'px ' + F_SANS;
+            var mx = PAD + 50 * S;
+            var ly = mm + 20 * S;
+            wrapText(g, m, maxW - 72 * S).forEach(function(ln) {
+              g.fillText(ln, mx, ly); ly += LH_BODY * S;
+            });
+          }
+          y += mH;
+        });
+        y += 14 * S;
+      }
+
+      // 举个例子（细边框块，左侧金色竖条）
+      if (item.example) {
+        var exLines = countLines('400 ' + (F_BODY * S) + 'px ' + F_SANS, item.example, maxW - 64 * S);
+        var exPadV = 26 * S, exPadH = 30 * S;
+        var exH = exPadV * 2 + 44 * S + 8 * S + (exLines - 1) * LH_BODY * S;
+        if (draw) {
+          roundStroke(g, PAD, y, maxW, exH, 10, '#faf7f0', '#efeadf');
+          g.fillStyle = '#1c5b46';
+          roundRect(g, PAD + 0, y + 0, 6, exH, 3); g.fill();
+          g.font = '600 ' + Math.round(F_LABEL * S) + 'px ' + F_SANS;
+          g.fillStyle = '#1c5b46';
+          drawSpacedText(g, '举个例子', PAD + exPadH, y + exPadV + 8 * S, 4);
+          g.fillStyle = '#201d19';
+          g.font = '400 ' + Math.round(F_BODY * S) + 'px ' + F_SANS;
+          var eiy = y + exPadV + 44 * S + 8 * S;
+          wrapText(g, item.example, maxW - 64 * S).forEach(function(ln) {
+            g.fillText(ln, PAD + exPadH, eiy); eiy += LH_BODY * S;
+          });
+        }
+        y += exH + 8 * S;
+      }
+
+      // 今日行动（墨绿实底 CTA 块）
+      if (item.action) {
+        var acLines = countLines('600 ' + (F_BODY * S) + 'px ' + F_SANS, item.action, maxW - 84 * S);
+        var acPadV = 34 * S, acPadH = 42 * S;
+        var acH = acPadV * 2 + 50 * S + (acLines - 1) * LH_BODY * S;
+        if (draw) {
+          roundRect(g, PAD, y, maxW, acH, 14);
+          g.fillStyle = '#1c5b46'; g.fill();
+          g.fillStyle = '#cfdfd6';
+          g.font = '600 ' + Math.round(16 * S) + 'px ' + F_SANS;
+          drawSpacedText(g, '▶ 今日行动', PAD + acPadH, y + acPadV + 8 * S, 3);
+          g.fillStyle = '#ffffff';
+          g.font = '600 ' + Math.round(F_BODY * S) + 'px ' + F_SANS;
+          var aiy = y + acPadV + 50 * S;
+          wrapText(g, item.action, maxW - 84 * S).forEach(function(ln) {
+            g.fillText(ln, PAD + acPadH, aiy); aiy += LH_BODY * S;
+          });
+        }
+        y += acH + 10 * S;
+      }
+
+      // 今日复盘
+      if (item.review) {
+        var rLines = countLines('400 ' + (F_BODY * S) + 'px ' + F_SANS, item.review, maxW);
+        if (draw) drawLabel(g, '今日复盘', '#1c5b46', PAD, y, F_LABEL * S);
+        y += (F_LABEL * S) * 1.1 + 8 * S;
+        if (draw) drawParagraph(g, item.review, '#3c3731', PAD, maxW, y, F_BODY * S, LH_BODY * S);
+        y += rLines * LH_BODY * S + 20 * S;
+      }
+
+      // --- 底部页脚 ---
+      y += 10 * S;
+      if (draw) drawRule(g, PAD, maxW, y, '#201d19');
+      y += 26 * S;
+      if (draw) {
+        g.fillStyle = '#b08a45';
+        g.font = '600 ' + Math.round(F_FOOT * S) + 'px ' + F_SANS;
+        var footTxt = '每日销售成长 · 一线实战';
+        var fw = ctx.measureText(footTxt).width;
+        g.fillText(footTxt, (W - fw) / 2, y);
+      }
+      y += 16 * S;
+
+      return y;
+    }
+
+    // 用当前上下文做真实测量得总高
+    // 注意 ctx 是测量用的临时 context，绘制用同一个 context（先量后画需两份）——这里用两次 layout
+    // 第一次：measure
+    var totalH_m = Math.round(layout(S, false));
+    var MAX_H = 5000;
+    if (totalH_m > MAX_H) { S = 0.72; totalH_m = Math.round(layout(S, false)); }
+    var totalH = Math.min(totalH_m, MAX_H) + 40;
+
+    // 第二次：真正绘制
     var c = document.createElement('canvas');
     c.width = W * SCALE; c.height = totalH * SCALE;
     var g = c.getContext('2d');
     g.scale(SCALE, SCALE);
-
     g.fillStyle = '#f6f3ec';
     g.fillRect(0, 0, W, totalH);
-    var y = 0;
-
-    // 品牌 logo + 名称（横排居中）
-    var brandText = '每日销售成长分享';
-    g.textAlign = 'left';
-    g.font = '600 ' + Math.round(28 * S) + 'px ' + F_SERIF;
-    var brandW = g.measureText(brandText).width;
-    var hasLogo = logoImg && logoImg.naturalWidth > 0;
-    var logoW = hasLogo ? 72 * S : 0;
-    var logoH = 72 * S;
-    var gap = hasLogo ? 20 * S : 0;
-    var startX = (W - (logoW + gap + brandW)) / 2;
-    y = 96 * S;
-    if (hasLogo) g.drawImage(logoImg, startX, y - 48 * S, logoW, logoH);
-    g.fillStyle = '#201d19';
-    g.fillText(brandText, startX + logoW + gap, y);
-    y += 64 * S;
-
-    // 分类胶囊
-    if (item.category) {
-      y = drawBadge(g, item.category, PAD, y, 19 * S);
-    } else {
-      y += 40 * S;
-    }
-
-    // 标题
-    g.fillStyle = '#201d19';
-    y = drawTitle(g, item.title, PAD, y, maxW, 44 * S, 62 * S, 2, 0, false);
-    y += 22 * S;
-
-    // 分隔线
-    g.strokeStyle = '#e7e1d6'; g.lineWidth = 1;
-    g.beginPath(); g.moveTo(PAD, y); g.lineTo(W - PAD, y); g.stroke();
-    y += 48 * S;
-
-    // 真实场景
-    if (item.scene) {
-      y = drawLabel(g, '真实场景', '#1c5b46', PAD, y, 19 * S);
-      y = drawParagraph(g, item.scene, '#6b6359', PAD, maxW, y, 25 * S, 40 * S) + 26 * S;
-    }
-
-    // 关键认知（金句 + 装饰引号）
-    if (item.insight) {
-      y = drawLabel(g, '关键认知', '#b08a45', PAD, y, 19 * S);
-      g.fillStyle = '#b08a45';
-      g.font = '600 ' + Math.round(44 * S) + 'px ' + F_SERIF;
-      g.fillText('“', PAD, y + 2 * S);
-      g.fillStyle = '#201d19';
-      g.font = '600 ' + Math.round(32 * S) + 'px ' + F_SERIF;
-      var qx = PAD + 36 * S;
-      var ils = wrapText(g, item.insight, maxW - 42 * S);
-      ils.forEach(function(ln) { g.fillText(ln, qx, y); y += 52 * S; });
-      y += 30 * S;
-    }
-
-    // 实战方法
-    if (item.methods && item.methods.length) {
-      y = drawLabel(g, '实战方法', '#1c5b46', PAD, y, 19 * S);
-      item.methods.forEach(function(m, i) {
-        var num = (i < 9 ? '0' : '') + (i + 1);
-        g.fillStyle = '#b08a45'; g.font = '600 ' + Math.round(22 * S) + 'px ' + F_SERIF;
-        g.fillText(num, PAD, y);
-        g.fillStyle = '#201d19'; g.font = '400 ' + Math.round(25 * S) + 'px ' + F_SANS;
-        var mls = wrapText(g, m, maxW - 70 * S);
-        mls.forEach(function(ln, j) {
-          g.fillText(ln, PAD + 70 * S, y);
-          y += j < mls.length - 1 ? 40 * S : 44 * S;
-        });
-      });
-      y += 20 * S;
-    }
-
-    // 举个例子（浅底块）
-    if (item.example) {
-      var exw = maxW - 22;
-      var exLines = countLines('400 ' + (25 * S) + 'px ' + F_SANS, item.example, exw);
-      var exH = 20 * S + 48 * S + exLines * 40 * S + 28 * S;
-      g.fillStyle = '#fbf9f4';
-      g.fillRect(PAD, y, maxW, exH);
-      g.strokeStyle = '#efeae0'; g.lineWidth = 1;
-      g.strokeRect(PAD + 0.5, y + 0.5, maxW - 1, exH - 1);
-      y += 20 * S;
-      y = drawLabel(g, '举个例子', '#1c5b46', PAD + 22, y, 19 * S);
-      y = drawParagraph(g, item.example, '#6b6359', PAD + 22, exw, y, 25 * S, 40 * S);
-      y += 28 * S;
-    }
-
-    // 今日行动（墨绿浅底块）
-    if (item.action) {
-      var acw = maxW - 22;
-      var acLines = countLines('400 ' + (25 * S) + 'px ' + F_SANS, item.action, acw);
-      var acH = 20 * S + 48 * S + acLines * 40 * S + 28 * S;
-      g.fillStyle = '#eef3ef';
-      g.fillRect(PAD, y, maxW, acH);
-      g.fillStyle = '#1c5b46';
-      g.fillRect(PAD, y, 4, acH);
-      y += 20 * S;
-      y = drawLabel(g, '今日行动', '#1c5b46', PAD + 22, y, 19 * S);
-      y = drawParagraph(g, item.action, '#1c5b46', PAD + 22, acw, y, 25 * S, 40 * S);
-      y += 28 * S;
-    }
-
-    // 今日复盘
-    if (item.review) {
-      y = drawLabel(g, '今日复盘', '#1c5b46', PAD, y, 19 * S);
-      y = drawParagraph(g, item.review, '#201d19', PAD, maxW, y, 25 * S, 40 * S, false);
-      y += 16 * S;
-    }
-
-    // 底部
-    y += 10 * S;
-    g.strokeStyle = '#e7e1d6'; g.lineWidth = 1;
-    g.beginPath(); g.moveTo(PAD, y); g.lineTo(W - PAD, y); g.stroke();
-    y += 36 * S;
-    g.fillStyle = '#a69d90'; g.font = '400 ' + Math.round(20 * S) + 'px ' + F_SANS;
-    g.fillText('一线销售成长 · 每日一篇', PAD, y);
+    layout(S, true);
 
     callback(c.toDataURL('image/png'));
   }
