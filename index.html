@@ -51,55 +51,49 @@ body::before {
 
 .serif { font-family: 'Noto Serif SC', Georgia, 'Times New Roman', 'Songti SC', 'STSong', 'SimSun', serif; }
 
-/* ===== Masthead ===== */
-.masthead {
-  position: relative;
-  text-align: center;
-  padding: 30px 20px 20px;
-  background:
-    radial-gradient(760px 300px at 50% -10%, rgba(176,138,69,0.07), transparent 65%),
-    linear-gradient(180deg, #faf7f0 0%, var(--paper) 100%);
-}
-.masthead h1 {
-  font-family: 'Noto Serif SC', Georgia, 'Songti SC', 'STSong', serif;
-  font-size: 30px; font-weight: 600; letter-spacing: -0.5px; line-height: 1.15;
-  color: var(--ink); margin-bottom: 14px;
-}
-.masthead-date { margin-bottom: 10px; }
-.masthead-date .date-select {
-  font-size: 14px; font-weight: 600; color: var(--ink);
-  padding: 6px 32px 6px 16px;
-  border: 1px solid var(--line); border-radius: 100px;
-  background-color: var(--card);
-  background-position: right 14px center;
-  text-align: center;
-}
-.masthead .subtitle { font-size: 13px; color: var(--ink-3); }
-.masthead .subtitle strong { color: var(--ink); font-weight: 600; }
-
-/* ===== Controls ===== */
-.controls {
-  position: sticky; top: 0; z-index: 100;
-  background: rgba(246,243,236,0.85);
+/* ===== 顶部吸顶区（标题 + 日期 + 分类整体固定在最上方）===== */
+.sticky-head {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(246,243,236,0.88);
   backdrop-filter: saturate(160%) blur(18px);
   -webkit-backdrop-filter: saturate(160%) blur(18px);
   border-bottom: 1px solid var(--line-soft);
-  padding: 14px 20px 16px;
+  padding: 12px 18px 14px;
 }
-.controls-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; justify-content: center; margin-bottom: 9px; }
-.controls-row:last-child { margin-bottom: 0; }
-.row-label { font-size: 10.5px; color: var(--ink-3); font-weight: 600; letter-spacing: 2px; margin-right: 4px; }
-
-.date-select {
+.sticky-head .row1 {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.sticky-head h1 {
+  font-family: 'Noto Serif SC', Georgia, 'Songti SC', 'STSong', serif;
+  font-size: 20px; font-weight: 600; letter-spacing: -0.3px; line-height: 1.15;
+  color: var(--ink); white-space: nowrap;
+}
+.sticky-head .subtitle {
+  font-size: 11px; color: var(--ink-3); margin-top: 3px; white-space: nowrap;
+}
+.sticky-head .date-select {
   appearance: none; -webkit-appearance: none;
-  background: var(--card); border: 1px solid var(--line); border-radius: 10px;
-  padding: 8px 34px 8px 15px; font-size: 13px; font-weight: 600; color: var(--ink); cursor: pointer;
+  font-size: 13px; font-weight: 600; color: var(--ink);
+  padding: 7px 30px 7px 15px;
+  border: 1px solid var(--line); border-radius: 100px;
+  background-color: var(--card);
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M3 4.5L6 7.5L9 4.5' stroke='%23a69d90' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
-  background-repeat: no-repeat; background-position: right 12px center;
+  background-repeat: no-repeat; background-position: right 13px center;
+  cursor: pointer; flex-shrink: 0;
 }
 .date-select:hover { border-color: var(--accent); }
 
-.chips { display: flex; gap: 5px; flex-wrap: wrap; }
+/* ===== 分类筛选（整整齐齐两排）===== */
+.controls-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; justify-content: center; }
+.row-label { font-size: 10.5px; color: var(--ink-3); font-weight: 600; letter-spacing: 2px; margin-right: 4px; }
+
+.chips { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
 .chip {
   padding: 7px 15px; border: 1px solid transparent; border-radius: 8px;
   background: transparent; font-size: 13px; font-weight: 500; color: var(--ink-2);
@@ -224,9 +218,9 @@ body::before {
 .article .foot-rule { width: 100%; height: 1px; background: var(--line-soft); margin-top: 34px; }
 
 @media (max-width: 560px) {
-  .masthead { padding: 18px 16px 14px; }
-  .masthead h1 { font-size: 22px; letter-spacing: -0.3px; margin-bottom: 10px; }
-  .masthead .subtitle { font-size: 12px; }
+  .sticky-head { padding: 10px 14px 12px; }
+  .sticky-head h1 { font-size: 18px; }
+  .sticky-head .subtitle { font-size: 10px; }
   .article { padding: 30px 22px; }
   .article h2 { font-size: 23px; }
   .insight { font-size: 19px; }
@@ -246,15 +240,14 @@ body::before {
 </head>
 <body>
 
-<div class="masthead">
-  <h1>每日销售成长分享</h1>
-  <div class="masthead-date">
+<div class="sticky-head" id="controls">
+  <div class="row1">
+    <div class="brand">
+      <h1>每日销售成长分享</h1>
+      <div class="subtitle">不灌鸡汤，只给能落地的认知 · 共 <strong id="stat-total">0</strong> 篇</div>
+    </div>
     <select class="date-select" id="dateSelect"></select>
   </div>
-  <div class="subtitle">不灌鸡汤，只给能落地的认知与方法 · 共 <strong id="stat-total">0</strong> 篇</div>
-</div>
-
-<div class="controls" id="controls">
   <div class="controls-row">
     <span class="row-label">分类</span>
     <div class="chips" id="categoryChips"></div>
