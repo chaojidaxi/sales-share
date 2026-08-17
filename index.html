@@ -55,43 +55,28 @@ body::before {
 .masthead {
   position: relative;
   text-align: center;
-  padding: 74px 20px 56px;
+  padding: 34px 20px 24px;
   background:
-    radial-gradient(900px 380px at 50% -10%, rgba(176,138,69,0.07), transparent 65%),
+    radial-gradient(760px 300px at 50% -10%, rgba(176,138,69,0.07), transparent 65%),
     linear-gradient(180deg, #faf7f0 0%, var(--paper) 100%);
 }
 .masthead .eyebrow {
   display: inline-flex; align-items: center; gap: 12px;
-  font-size: 11px; font-weight: 600; letter-spacing: 4px;
+  font-size: 10.5px; font-weight: 600; letter-spacing: 4px;
   color: var(--accent); text-transform: uppercase;
-  margin-bottom: 26px;
+  margin-bottom: 12px;
 }
 .masthead .eyebrow::before, .masthead .eyebrow::after {
-  content: ""; width: 36px; height: 1px; background: var(--line);
+  content: ""; width: 28px; height: 1px; background: var(--line);
 }
 .masthead h1 {
   font-family: 'Noto Serif SC', Georgia, 'Songti SC', 'STSong', serif;
-  font-size: 58px; font-weight: 600; letter-spacing: -2px; line-height: 1.1;
-  color: var(--ink); margin-bottom: 14px;
+  font-size: 32px; font-weight: 600; letter-spacing: -0.5px; line-height: 1.15;
+  color: var(--ink); margin-bottom: 8px;
 }
-.masthead .en {
-  font-family: Georgia, 'Times New Roman', serif;
-  font-size: 13px; letter-spacing: 5px; text-transform: uppercase;
-  color: var(--ink-3); margin-bottom: 28px;
-}
-.masthead .rule {
-  width: 200px; height: 1px; margin: 0 auto 26px;
-  background: linear-gradient(90deg, transparent, var(--gold), transparent);
-}
-.masthead .subtitle { font-size: 16px; color: var(--ink-2); margin-bottom: 6px; }
-
-.masthead .stats { display: flex; gap: 0; justify-content: center; align-items: center; margin-top: 30px; }
-.masthead .stat { padding: 0 28px; text-align: center; }
-.masthead .stat + .stat { border-left: 1px solid var(--line); }
-.masthead .stat .num {
-  font-family: Georgia, serif; font-size: 30px; font-weight: 600; color: var(--ink); line-height: 1;
-}
-.masthead .stat .lbl { font-size: 11px; letter-spacing: 2px; color: var(--ink-3); margin-top: 8px; }
+.masthead .subtitle { font-size: 13.5px; color: var(--ink-2); }
+.masthead .meta-inline { font-size: 12px; color: var(--ink-3); margin-top: 10px; letter-spacing: 0.5px; }
+.masthead .meta-inline strong { color: var(--ink); font-weight: 600; }
 
 /* ===== Controls ===== */
 .controls {
@@ -240,10 +225,8 @@ body::before {
 .article .foot-rule { width: 100%; height: 1px; background: var(--line-soft); margin-top: 34px; }
 
 @media (max-width: 560px) {
-  .masthead { padding: 54px 16px 44px; }
-  .masthead h1 { font-size: 38px; letter-spacing: -1px; }
-  .masthead .stat { padding: 0 18px; }
-  .masthead .stat .num { font-size: 24px; }
+  .masthead { padding: 24px 16px 18px; }
+  .masthead h1 { font-size: 26px; letter-spacing: -0.3px; }
   .article { padding: 30px 22px; }
   .article h2 { font-size: 23px; }
   .insight { font-size: 19px; }
@@ -266,19 +249,8 @@ body::before {
 <div class="masthead">
   <div class="eyebrow">Daily Sales Playbook</div>
   <h1>每日销售成长分享</h1>
-  <div class="en">A daily note for the front-line seller</div>
-  <div class="rule"></div>
   <div class="subtitle">不灌鸡汤，只给能落地的认知与方法</div>
-  <div class="stats">
-    <div class="stat">
-      <div class="num" id="stat-total">0</div>
-      <div class="lbl">已分享</div>
-    </div>
-    <div class="stat">
-      <div class="num" id="stat-date">—</div>
-      <div class="lbl">更新于</div>
-    </div>
-  </div>
+  <div class="meta-inline">已分享 <strong id="stat-total">0</strong> 篇 · 更新于 <strong id="stat-date">—</strong></div>
 </div>
 
 <div class="controls" id="controls">
