@@ -672,28 +672,28 @@ function generateCardImage(item, callback) {
       var LINE_C = '#ececec';        // 分隔线
       var EX_BG = '#f6f5f4';         // 举例块底
 
-      // --- 顶部：圆形logo + 品牌(左) / 日期(右)，细线收尾 ---
-      y += 44 * S;
+      // --- 顶部：圆形logo(大) + 品牌名，垂直居中对齐，细线收尾（不写日期）---
+      var logoR = 30 * S;             // logo 半径（放大）
+      var logoD = logoR * 2;          // logo 直径
+      var brandFont = '600 ' + Math.round(F_BRAND * S) + 'px ' + F_SERIF;
+      y += 20 * S + logoR;            // y 对齐到 logo 垂直中心（品牌名 baseline 参考线）
       if (draw) {
+        var logoCY = y;               // logo 圆心 y
         if (hasLogo) {
           g.save();
-          g.beginPath(); g.arc(PAD + 18 * S, y - 14 * S, 18 * S, 0, Math.PI * 2); g.closePath(); g.clip();
-          g.drawImage(logoImg, PAD, y - 32 * S, 36 * S, 36 * S);
+          g.beginPath(); g.arc(PAD + logoR, logoCY, logoR, 0, Math.PI * 2); g.closePath(); g.clip();
+          g.drawImage(logoImg, PAD, logoCY - logoR, logoD, logoD);
           g.restore();
         }
-        g.font = '600 ' + Math.round(F_BRAND * S) + 'px ' + F_SERIF;
+        // 品牌名与 logo 垂直居中对齐：baseline = 圆心 + 字高/2 的微调
+        g.font = brandFont;
         g.fillStyle = INK;
-        g.fillText('每日销售成长分享', PAD + 48 * S, y);
-        var dateStr = item.date || '';
-        if (dateStr) {
-          g.font = '400 ' + Math.round(15 * S) + 'px ' + F_SANS;
-          var dw = ctx.measureText(dateStr).width;
-          g.fillStyle = FAINT;
-          g.fillText(dateStr, W - PAD - dw, y);
-        }
-        drawRule(g, PAD, maxW, y + 26 * S, LINE_C);
+        g.textBaseline = 'middle';
+        g.fillText('每日销售成长分享', PAD + logoD + 20 * S, logoCY + 1 * S);
+        g.textBaseline = 'alphabetic';
+        drawRule(g, PAD, maxW, y + logoR + 24 * S, LINE_C);
       }
-      y += 26 * S + 34 * S;
+      y += logoR + 24 * S + 34 * S;
 
       // --- 分类胶囊（珊瑚红描边，左对齐，小巧）---
       if (item.category) {
