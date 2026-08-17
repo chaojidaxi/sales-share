@@ -556,7 +556,8 @@ function generateCardImage(item, callback) {
   function run(logoImg) {
     var W = 750, PAD = 60, maxW = W - PAD * 2;
     var SCALE = 2;
-    var ctx = document.createElement('canvas').getContext('2d');
+    var c = document.createElement('canvas');
+    var ctx = c.getContext('2d');          // 唯一的 context：测量与绘制共用
     var hasLogo = logoImg && logoImg.naturalWidth > 0;
 
     // ============ 内容多寡评分 → 密度系数 S ============
@@ -799,21 +800,17 @@ function generateCardImage(item, callback) {
       return y;
     }
 
-    // 用当前上下文做真实测量得总高
-    // 注意 ctx 是测量用的临时 context，绘制用同一个 context（先量后画需两份）——这里用两次 layout
-    // 第一次：measure
+    // 测量：仅累计高度，不绘制
     var totalH_m = Math.round(layout(S, false));
     var MAX_H = 5000;
     if (totalH_m > MAX_H) { S = 0.72; totalH_m = Math.round(layout(S, false)); }
     var totalH = Math.min(totalH_m, MAX_H) + 40;
 
-    // 第二次：真正绘制
-    var c = document.createElement('canvas');
+    // 设置画布尺寸并绘制（同一 ctx）
     c.width = W * SCALE; c.height = totalH * SCALE;
-    var g = c.getContext('2d');
-    g.scale(SCALE, SCALE);
-    g.fillStyle = '#f6f3ec';
-    g.fillRect(0, 0, W, totalH);
+    ctx.setTransform(SCALE, 0, 0, SCALE, 0, 0);
+    ctx.fillStyle = '#f6f3ec';
+    ctx.fillRect(0, 0, W, totalH);
     layout(S, true);
 
     callback(c.toDataURL('image/png'));
