@@ -479,22 +479,20 @@ function generateCardImage(item, callback) {
 
     // logo
     if (logoImg && logoImg.naturalWidth > 0) {
-      var logoW = 120;
+      var logoW = 108;
       var logoH = logoW * logoImg.naturalHeight / logoImg.naturalWidth;
-      ctx.drawImage(logoImg, (W - logoW) / 2, 96, logoW, logoH);
-      y = 96 + logoH + 48;
+      ctx.drawImage(logoImg, (W - logoW) / 2, 90, logoW, logoH);
+      y = 90 + logoH + 42;
     } else {
-      y = 120;
+      y = 118;
     }
 
-    // 顶部装饰
-    ctx.strokeStyle = '#b08a45'; ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.moveTo(W / 2 - 72, y); ctx.lineTo(W / 2 + 72, y); ctx.stroke();
-    y += 44;
+    // 品牌名
     ctx.textAlign = 'center';
-    ctx.fillStyle = '#1c5b46'; ctx.font = '600 21px ' + F_SANS;
+    ctx.fillStyle = '#201d19';
+    ctx.font = '600 27px ' + F_SERIF;
     ctx.fillText('每日销售成长分享', W / 2, y);
-    y += 70;
+    y += 66;
     ctx.textAlign = 'left';
 
     // 分类标签
