@@ -275,16 +275,8 @@ body::before {
   <div class="controls-row">
     <span class="row-label">日期</span>
     <select class="date-select" id="dateSelect"></select>
-    <span class="row-label">对象</span>
-    <div class="chips" id="objectChips"></div>
-  </div>
-  <div class="controls-row">
     <span class="row-label">分类</span>
     <div class="chips" id="categoryChips"></div>
-  </div>
-  <div class="controls-row">
-    <span class="row-label">节点</span>
-    <div class="chips" id="nodeChips"></div>
   </div>
 </div>
 
@@ -292,7 +284,7 @@ body::before {
 
 <script>
 var DB = null;
-var state = { date: '全部', object: '全部', category: '全部', node: '全部' };
+var state = { date: '全部', category: '全部' };
 
 function fetchData() {
   return fetch('data.json?v=' + Date.now())
@@ -330,9 +322,7 @@ function buildControls(d) {
   dateSel.value = state.date;
   dateSel.onchange = function() { state.date = this.value; render(); };
 
-  buildChips('objectChips', 'object', (d.objects || []), function(v) { state.object = v; render(); });
   buildChips('categoryChips', 'category', (d.categories || []), function(v) { state.category = v; render(); });
-  buildChips('nodeChips', 'node', (d.nodes || []), function(v) { state.node = v; render(); });
 }
 
 function buildChips(id, key, values, onPick) {
@@ -354,9 +344,7 @@ function buildChips(id, key, values, onPick) {
 }
 
 function match(item) {
-  if (state.object !== '全部' && item.object !== state.object) return false;
   if (state.category !== '全部' && item.category !== state.category) return false;
-  if (state.node !== '全部' && item.node !== state.node) return false;
   if (state.date !== '全部' && item.date !== state.date) return false;
   return true;
 }
@@ -375,10 +363,6 @@ function renderCard(item) {
   return '<article class="article">' +
     '<div class="meta-line">' +
       '<span class="tag">' + esc(item.category) + '</span>' +
-      '<span class="dot"></span>' +
-      '<span>' + esc(item.object) + '</span>' +
-      '<span class="dot"></span>' +
-      '<span>' + esc(item.node) + '</span>' +
       '<span class="dot"></span>' +
       '<span>' + esc(item.date) + '</span>' +
     '</div>' +
