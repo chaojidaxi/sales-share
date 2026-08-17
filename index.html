@@ -494,10 +494,12 @@ function drawParagraph(ctx, text, color, x, maxW, y, size, lineH, italic) {
 function generateCardImage(item, callback) {
   function run(logoImg) {
     var W = 750, PAD = 56, maxW = W - PAD * 2;
+    var SCALE = 2;
     var c = document.createElement('canvas');
-    c.width = W;
-    c.height = 4400;
+    c.width = W * SCALE;
+    c.height = 4400 * SCALE;
     var ctx = c.getContext('2d');
+    ctx.scale(SCALE, SCALE);
     var y = 0;
 
     ctx.fillStyle = '#f6f3ec';
@@ -625,9 +627,9 @@ function generateCardImage(item, callback) {
 
     var finalH = y + 56;
     var fc = document.createElement('canvas');
-    fc.width = W; fc.height = finalH;
+    fc.width = W * SCALE; fc.height = finalH * SCALE;
     var fctx = fc.getContext('2d');
-    fctx.drawImage(c, 0, 0, W, finalH, 0, 0, W, finalH);
+    fctx.drawImage(c, 0, 0, W * SCALE, finalH * SCALE, 0, 0, W * SCALE, finalH * SCALE);
     callback(fc.toDataURL('image/png'));
   }
 
