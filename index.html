@@ -509,10 +509,10 @@ function generateCardImage(item, callback) {
     if (logoImg && logoImg.naturalWidth > 0) {
       var logoW = 120;
       var logoH = logoW * logoImg.naturalHeight / logoImg.naturalWidth;
-      ctx.drawImage(logoImg, (W - logoW) / 2, 60, logoW, logoH);
-      y = 60 + logoH + 40;
+      ctx.drawImage(logoImg, (W - logoW) / 2, 96, logoW, logoH);
+      y = 96 + logoH + 48;
     } else {
-      y = 80;
+      y = 120;
     }
 
     // 顶部装饰
@@ -622,7 +622,7 @@ function generateCardImage(item, callback) {
     ctx.fillStyle = '#a69d90'; ctx.font = '400 20px ' + F_SANS;
     ctx.fillText('一线销售成长 · 每日一篇', PAD, y);
 
-    var finalH = y + 56;
+    var finalH = y + 96;
     var fc = document.createElement('canvas');
     fc.width = W * SCALE; fc.height = finalH * SCALE;
     var fctx = fc.getContext('2d');
