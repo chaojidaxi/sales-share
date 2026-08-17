@@ -468,133 +468,149 @@ function drawParagraph(ctx, text, color, x, maxW, y, size, lineH, italic) {
 }
 
 function generateCardImage(item, callback) {
-  var W = 750, PAD = 56, maxW = W - PAD * 2;
-  var c = document.createElement('canvas');
-  c.width = W;
-  c.height = 4000;
-  var ctx = c.getContext('2d');
-  var y = 0;
+  function run(logoImg) {
+    var W = 750, PAD = 56, maxW = W - PAD * 2;
+    var c = document.createElement('canvas');
+    c.width = W;
+    c.height = 4400;
+    var ctx = c.getContext('2d');
+    var y = 0;
 
-  ctx.fillStyle = '#f6f3ec';
-  ctx.fillRect(0, 0, W, 4000);
+    ctx.fillStyle = '#f6f3ec';
+    ctx.fillRect(0, 0, W, 4400);
 
-  // 顶部装饰
-  y = 76;
-  ctx.strokeStyle = '#b08a45'; ctx.lineWidth = 2;
-  ctx.beginPath(); ctx.moveTo(W / 2 - 72, y); ctx.lineTo(W / 2 + 72, y); ctx.stroke();
-  y += 44;
-  ctx.textAlign = 'center';
-  ctx.fillStyle = '#1c5b46'; ctx.font = '600 21px ' + F_SANS;
-  ctx.fillText('每日销售成长分享', W / 2, y);
-  y += 38;
-  ctx.fillStyle = '#a69d90'; ctx.font = '400 21px ' + F_SANS;
-  ctx.fillText(item.date || '', W / 2, y);
-  y += 70;
-  ctx.textAlign = 'left';
+    // logo
+    if (logoImg && logoImg.naturalWidth > 0) {
+      var logoW = 120;
+      var logoH = logoW * logoImg.naturalHeight / logoImg.naturalWidth;
+      ctx.drawImage(logoImg, (W - logoW) / 2, 60, logoW, logoH);
+      y = 60 + logoH + 40;
+    } else {
+      y = 80;
+    }
 
-  // 分类标签
-  ctx.fillStyle = '#1c5b46'; ctx.font = '600 25px ' + F_SANS;
-  ctx.fillText('· ' + (item.category || ''), PAD, y);
-  y += 50;
+    // 顶部装饰
+    ctx.strokeStyle = '#b08a45'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(W / 2 - 72, y); ctx.lineTo(W / 2 + 72, y); ctx.stroke();
+    y += 44;
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#1c5b46'; ctx.font = '600 21px ' + F_SANS;
+    ctx.fillText('每日销售成长分享', W / 2, y);
+    y += 38;
+    ctx.fillStyle = '#a69d90'; ctx.font = '400 21px ' + F_SANS;
+    ctx.fillText(item.date || '', W / 2, y);
+    y += 70;
+    ctx.textAlign = 'left';
 
-  // 标题
-  ctx.fillStyle = '#201d19'; ctx.font = '600 46px ' + F_SERIF;
-  var tls = wrapText(ctx, item.title, maxW);
-  tls.forEach(function(ln) { ctx.fillText(ln, PAD, y); y += 66; });
-  y += 18;
+    // 分类标签
+    ctx.fillStyle = '#1c5b46'; ctx.font = '600 25px ' + F_SANS;
+    ctx.fillText('· ' + (item.category || ''), PAD, y);
+    y += 50;
 
-  // 分隔线
-  ctx.strokeStyle = '#e7e1d6'; ctx.lineWidth = 1;
-  ctx.beginPath(); ctx.moveTo(PAD, y); ctx.lineTo(W - PAD, y); ctx.stroke();
-  y += 48;
+    // 标题
+    ctx.fillStyle = '#201d19'; ctx.font = '600 46px ' + F_SERIF;
+    var tls = wrapText(ctx, item.title, maxW);
+    tls.forEach(function(ln) { ctx.fillText(ln, PAD, y); y += 66; });
+    y += 18;
 
-  // 真实场景
-  if (item.scene) {
-    y = drawLabel(ctx, '真实场景', '#1c5b46', PAD, y);
-    y = drawParagraph(ctx, item.scene, '#6b6359', PAD, maxW, y, 27, 46) + 30;
-  }
+    // 分隔线
+    ctx.strokeStyle = '#e7e1d6'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(PAD, y); ctx.lineTo(W - PAD, y); ctx.stroke();
+    y += 48;
 
-  // 关键认知（金句 + 金色竖线）
-  if (item.insight) {
-    y = drawLabel(ctx, '关键认知', '#b08a45', PAD, y);
-    var qx = PAD + 24;
-    var y0 = y;
-    ctx.fillStyle = '#201d19'; ctx.font = '600 34px ' + F_SERIF;
-    var ils = wrapText(ctx, item.insight, maxW - 24);
-    ils.forEach(function(ln) { ctx.fillText(ln, qx, y); y += 56; });
-    ctx.fillStyle = '#b08a45';
-    ctx.fillRect(PAD, y0 - 6, 4, (y - y0) + 8);
-    y += 32;
-  }
+    // 真实场景
+    if (item.scene) {
+      y = drawLabel(ctx, '真实场景', '#1c5b46', PAD, y);
+      y = drawParagraph(ctx, item.scene, '#6b6359', PAD, maxW, y, 27, 46) + 30;
+    }
 
-  // 实战方法
-  if (item.methods && item.methods.length) {
-    y = drawLabel(ctx, '实战方法', '#1c5b46', PAD, y);
-    item.methods.forEach(function(m, i) {
-      var num = (i < 9 ? '0' : '') + (i + 1);
-      ctx.fillStyle = '#b08a45'; ctx.font = '600 25px ' + F_SERIF;
-      ctx.fillText(num, PAD, y);
-      ctx.fillStyle = '#201d19'; ctx.font = '400 27px ' + F_SANS;
-      var mls = wrapText(ctx, m, maxW - 74);
-      mls.forEach(function(ln, j) {
-        ctx.fillText(ln, PAD + 74, y);
-        y += j < mls.length - 1 ? 44 : 50;
+    // 关键认知（金句 + 金色竖线）
+    if (item.insight) {
+      y = drawLabel(ctx, '关键认知', '#b08a45', PAD, y);
+      var qx = PAD + 24;
+      var y0 = y;
+      ctx.fillStyle = '#201d19'; ctx.font = '600 34px ' + F_SERIF;
+      var ils = wrapText(ctx, item.insight, maxW - 24);
+      ils.forEach(function(ln) { ctx.fillText(ln, qx, y); y += 56; });
+      ctx.fillStyle = '#b08a45';
+      ctx.fillRect(PAD, y0 - 6, 4, (y - y0) + 8);
+      y += 32;
+    }
+
+    // 实战方法
+    if (item.methods && item.methods.length) {
+      y = drawLabel(ctx, '实战方法', '#1c5b46', PAD, y);
+      item.methods.forEach(function(m, i) {
+        var num = (i < 9 ? '0' : '') + (i + 1);
+        ctx.fillStyle = '#b08a45'; ctx.font = '600 25px ' + F_SERIF;
+        ctx.fillText(num, PAD, y);
+        ctx.fillStyle = '#201d19'; ctx.font = '400 27px ' + F_SANS;
+        var mls = wrapText(ctx, m, maxW - 74);
+        mls.forEach(function(ln, j) {
+          ctx.fillText(ln, PAD + 74, y);
+          y += j < mls.length - 1 ? 44 : 50;
+        });
       });
-    });
-    y += 24;
+      y += 24;
+    }
+
+    // 举个例子（浅底块）
+    if (item.example) {
+      ctx.font = '400 26px ' + F_SANS;
+      var exLines = wrapText(ctx, item.example, maxW - 22);
+      var exH = 22 + 42 + exLines.length * 44 + 26;
+      ctx.fillStyle = '#fbf9f4';
+      ctx.fillRect(PAD, y, maxW, exH);
+      ctx.strokeStyle = '#efeae0'; ctx.lineWidth = 1;
+      ctx.strokeRect(PAD + 0.5, y + 0.5, maxW - 1, exH - 1);
+      y += 22;
+      y = drawLabel(ctx, '举个例子', '#1c5b46', PAD + 22, y);
+      y = drawParagraph(ctx, item.example, '#6b6359', PAD + 22, maxW - 22, y, 26, 44);
+      y += 32;
+    }
+
+    // 今日行动（墨绿浅底块）
+    if (item.action) {
+      ctx.font = '400 27px ' + F_SANS;
+      var acLines = wrapText(ctx, item.action, maxW - 22);
+      var acH = 22 + 42 + acLines.length * 44 + 26;
+      ctx.fillStyle = '#eef3ef';
+      ctx.fillRect(PAD, y, maxW, acH);
+      ctx.fillStyle = '#1c5b46';
+      ctx.fillRect(PAD, y, 4, acH);
+      y += 22;
+      y = drawLabel(ctx, '今日行动', '#1c5b46', PAD + 22, y);
+      y = drawParagraph(ctx, item.action, '#1c5b46', PAD + 22, maxW - 22, y, 27, 44);
+      y += 32;
+    }
+
+    // 今日复盘
+    if (item.review) {
+      y = drawLabel(ctx, '今日复盘', '#1c5b46', PAD, y);
+      y = drawParagraph(ctx, item.review, '#201d19', PAD, maxW, y, 27, 46, true);
+      y += 20;
+    }
+
+    // 底部
+    y += 10;
+    ctx.strokeStyle = '#e7e1d6'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(PAD, y); ctx.lineTo(W - PAD, y); ctx.stroke();
+    y += 36;
+    ctx.fillStyle = '#a69d90'; ctx.font = '400 20px ' + F_SANS;
+    ctx.fillText('一线销售成长 · 每日一篇', PAD, y);
+
+    var finalH = y + 56;
+    var fc = document.createElement('canvas');
+    fc.width = W; fc.height = finalH;
+    var fctx = fc.getContext('2d');
+    fctx.drawImage(c, 0, 0, W, finalH, 0, 0, W, finalH);
+    callback(fc.toDataURL('image/png'));
   }
 
-  // 举个例子（浅底块）
-  if (item.example) {
-    ctx.font = '400 26px ' + F_SANS;
-    var exLines = wrapText(ctx, item.example, maxW - 22);
-    var exH = 22 + 42 + exLines.length * 44 + 26;
-    ctx.fillStyle = '#fbf9f4';
-    ctx.fillRect(PAD, y, maxW, exH);
-    ctx.strokeStyle = '#efeae0'; ctx.lineWidth = 1;
-    ctx.strokeRect(PAD + 0.5, y + 0.5, maxW - 1, exH - 1);
-    y += 22;
-    y = drawLabel(ctx, '举个例子', '#1c5b46', PAD + 22, y);
-    y = drawParagraph(ctx, item.example, '#6b6359', PAD + 22, maxW - 22, y, 26, 44);
-    y += 32;
-  }
-
-  // 今日行动（墨绿浅底块）
-  if (item.action) {
-    ctx.font = '400 27px ' + F_SANS;
-    var acLines = wrapText(ctx, item.action, maxW - 22);
-    var acH = 22 + 42 + acLines.length * 44 + 26;
-    ctx.fillStyle = '#eef3ef';
-    ctx.fillRect(PAD, y, maxW, acH);
-    ctx.fillStyle = '#1c5b46';
-    ctx.fillRect(PAD, y, 4, acH);
-    y += 22;
-    y = drawLabel(ctx, '今日行动', '#1c5b46', PAD + 22, y);
-    y = drawParagraph(ctx, item.action, '#1c5b46', PAD + 22, maxW - 22, y, 27, 44);
-    y += 32;
-  }
-
-  // 今日复盘
-  if (item.review) {
-    y = drawLabel(ctx, '今日复盘', '#1c5b46', PAD, y);
-    y = drawParagraph(ctx, item.review, '#201d19', PAD, maxW, y, 27, 46, true);
-    y += 20;
-  }
-
-  // 底部
-  y += 10;
-  ctx.strokeStyle = '#e7e1d6'; ctx.lineWidth = 1;
-  ctx.beginPath(); ctx.moveTo(PAD, y); ctx.lineTo(W - PAD, y); ctx.stroke();
-  y += 36;
-  ctx.fillStyle = '#a69d90'; ctx.font = '400 20px ' + F_SANS;
-  ctx.fillText('一线销售成长 · 每日一篇', PAD, y);
-
-  var finalH = y + 56;
-  var fc = document.createElement('canvas');
-  fc.width = W; fc.height = finalH;
-  var fctx = fc.getContext('2d');
-  fctx.drawImage(c, 0, 0, W, finalH, 0, 0, W, finalH);
-  callback(fc.toDataURL('image/png'));
+  var img = new Image();
+  img.onload = function() { run(img); };
+  img.onerror = function() { run(null); };
+  img.src = 'logo.png';
 }
 
 function showCardModal(dataUrl, title) {
