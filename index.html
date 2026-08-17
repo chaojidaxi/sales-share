@@ -452,11 +452,35 @@ function wrapText(ctx, text, maxWidth) {
   return lines;
 }
 
+function drawSpacedText(ctx, text, x, y, spacing) {
+  var chars = String(text).split('');
+  var cx = x;
+  chars.forEach(function(ch) {
+    ctx.fillText(ch, cx, y);
+    cx += ctx.measureText(ch).width + spacing;
+  });
+  return cx;
+}
+
 function drawLabel(ctx, text, color, x, y) {
   ctx.fillStyle = color;
-  ctx.font = '700 23px ' + F_SANS;
-  ctx.fillText(text, x, y);
-  return y + 42;
+  ctx.fillRect(x, y - 17, 5, 23);
+  ctx.font = '700 22px ' + F_SANS;
+  drawSpacedText(ctx, text, x + 18, y, 4);
+  return y + 50;
+}
+
+function drawTitle(ctx, text, x, y, maxW, size, lineH, spacing) {
+  ctx.font = '600 ' + size + 'px ' + F_SERIF;
+  var chars = String(text).split('');
+  var cx = x;
+  chars.forEach(function(ch) {
+    var w = ctx.measureText(ch).width + spacing;
+    if (cx + w > x + maxW && cx > x) { cx = x; y += lineH; }
+    ctx.fillText(ch, cx, y);
+    cx += w;
+  });
+  return y;
 }
 
 function drawParagraph(ctx, text, color, x, maxW, y, size, lineH, italic) {
@@ -507,11 +531,10 @@ function generateCardImage(item, callback) {
     ctx.fillText('· ' + (item.category || ''), PAD, y);
     y += 50;
 
-    // 标题
-    ctx.fillStyle = '#201d19'; ctx.font = '600 46px ' + F_SERIF;
-    var tls = wrapText(ctx, item.title, maxW);
-    tls.forEach(function(ln) { ctx.fillText(ln, PAD, y); y += 66; });
-    y += 18;
+    // 标题（衬线 + 字距）
+    ctx.fillStyle = '#201d19';
+    y = drawTitle(ctx, item.title, PAD, y, maxW, 46, 70, 2);
+    y += 20;
 
     // 分隔线
     ctx.strokeStyle = '#e7e1d6'; ctx.lineWidth = 1;
@@ -524,17 +547,18 @@ function generateCardImage(item, callback) {
       y = drawParagraph(ctx, item.scene, '#6b6359', PAD, maxW, y, 27, 46) + 30;
     }
 
-    // 关键认知（金句 + 金色竖线）
+    // 关键认知（金句 + 装饰引号）
     if (item.insight) {
       y = drawLabel(ctx, '关键认知', '#b08a45', PAD, y);
-      var qx = PAD + 24;
-      var y0 = y;
-      ctx.fillStyle = '#201d19'; ctx.font = '600 34px ' + F_SERIF;
-      var ils = wrapText(ctx, item.insight, maxW - 24);
-      ils.forEach(function(ln) { ctx.fillText(ln, qx, y); y += 56; });
       ctx.fillStyle = '#b08a45';
-      ctx.fillRect(PAD, y0 - 6, 4, (y - y0) + 8);
-      y += 32;
+      ctx.font = '600 88px ' + F_SERIF;
+      ctx.fillText('“', PAD - 8, y + 16);
+      ctx.fillStyle = '#201d19';
+      ctx.font = '600 35px ' + F_SERIF;
+      var qx = PAD + 52;
+      var ils = wrapText(ctx, item.insight, maxW - 58);
+      ils.forEach(function(ln) { ctx.fillText(ln, qx, y); y += 58; });
+      y += 34;
     }
 
     // 实战方法
@@ -557,8 +581,8 @@ function generateCardImage(item, callback) {
     // 举个例子（浅底块）
     if (item.example) {
       ctx.font = '400 26px ' + F_SANS;
-      var exLines = wrapText(ctx, item.example, maxW - 22);
-      var exH = 22 + 42 + exLines.length * 44 + 26;
+    var exLines = wrapText(ctx, item.example, maxW - 22);
+    var exH = 22 + 50 + exLines.length * 44 + 32;
       ctx.fillStyle = '#fbf9f4';
       ctx.fillRect(PAD, y, maxW, exH);
       ctx.strokeStyle = '#efeae0'; ctx.lineWidth = 1;
@@ -572,8 +596,8 @@ function generateCardImage(item, callback) {
     // 今日行动（墨绿浅底块）
     if (item.action) {
       ctx.font = '400 27px ' + F_SANS;
-      var acLines = wrapText(ctx, item.action, maxW - 22);
-      var acH = 22 + 42 + acLines.length * 44 + 26;
+    var acLines = wrapText(ctx, item.action, maxW - 22);
+    var acH = 22 + 50 + acLines.length * 44 + 32;
       ctx.fillStyle = '#eef3ef';
       ctx.fillRect(PAD, y, maxW, acH);
       ctx.fillStyle = '#1c5b46';
