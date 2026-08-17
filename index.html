@@ -646,7 +646,7 @@ function generateCardImage(item, callback) {
     var F_QUOTE = 29, LH_QUOTE = 48;      // 金句(认知)
     var F_BODY  = 24, LH_BODY  = 40;      // 正文
     var F_LABEL = 15, LH_LABEL = 22;      // 小标签
-    var F_BRAND = 22;                     // 品牌
+    var F_BRAND = 28;                     // 品牌（与放大logo匹配）
     var F_FOOT  = 16;                     // 页脚
     var F_NUM   = 19;                     // 方法编号
 
@@ -672,11 +672,11 @@ function generateCardImage(item, callback) {
       var LINE_C = '#ececec';        // 分隔线
       var EX_BG = '#f6f5f4';         // 举例块底
 
-      // --- 顶部：圆形logo(大) + 品牌名，垂直居中对齐，细线收尾（不写日期）---
-      var logoR = 30 * S;             // logo 半径（放大）
+      // --- 顶部：圆形logo(尽量大) + 品牌名，垂直居中对齐，细线收尾（不写日期）---
+      var logoR = 44 * S;             // logo 半径（最大化）
       var logoD = logoR * 2;          // logo 直径
       var brandFont = '600 ' + Math.round(F_BRAND * S) + 'px ' + F_SERIF;
-      y += 20 * S + logoR;            // y 对齐到 logo 垂直中心（品牌名 baseline 参考线）
+      y += 14 * S + logoR;            // y 对齐到 logo 垂直中心
       if (draw) {
         var logoCY = y;               // logo 圆心 y
         if (hasLogo) {
@@ -685,11 +685,11 @@ function generateCardImage(item, callback) {
           g.drawImage(logoImg, PAD, logoCY - logoR, logoD, logoD);
           g.restore();
         }
-        // 品牌名与 logo 垂直居中对齐：baseline = 圆心 + 字高/2 的微调
+        // 品牌名与 logo 垂直居中对齐
         g.font = brandFont;
         g.fillStyle = INK;
         g.textBaseline = 'middle';
-        g.fillText('每日销售成长分享', PAD + logoD + 20 * S, logoCY + 1 * S);
+        g.fillText('每日销售成长分享', PAD + logoD + 22 * S, logoCY);
         g.textBaseline = 'alphabetic';
         drawRule(g, PAD, maxW, y + logoR + 24 * S, LINE_C);
       }
