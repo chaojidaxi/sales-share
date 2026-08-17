@@ -218,7 +218,7 @@ body::before {
 .action .k { margin-bottom: 6px; display: block; }
 
 /* 今日复盘 */
-.review { font-size: 15px; color: var(--ink); line-height: 1.9; font-style: italic; }
+.review { font-size: 15px; color: var(--ink); line-height: 1.9; }
 .review .k { font-style: normal; }
 
 .article .foot-rule { width: 100%; height: 1px; background: var(--line-soft); margin-top: 34px; }
@@ -440,10 +440,10 @@ function drawSpacedText(ctx, text, x, y, spacing) {
 
 function drawLabel(ctx, text, color, x, y) {
   ctx.fillStyle = color;
-  ctx.fillRect(x, y - 17, 5, 23);
-  ctx.font = '700 22px ' + F_SANS;
-  drawSpacedText(ctx, text, x + 18, y, 4);
-  return y + 50;
+  ctx.fillRect(x, y - 13, 4, 18);
+  ctx.font = '700 19px ' + F_SANS;
+  drawSpacedText(ctx, text, x + 15, y, 4);
+  return y + 42;
 }
 
 function drawTitle(ctx, text, x, y, maxW, size, lineH, spacing) {
@@ -478,16 +478,16 @@ function roundRect(ctx, x, y, w, h, r) {
 }
 
 function drawBadge(ctx, text, x, y) {
-  ctx.font = '600 22px ' + F_SANS;
+  ctx.font = '600 19px ' + F_SANS;
   var tw = ctx.measureText(text).width;
-  var bw = tw + 44;
-  var bh = 46;
+  var bw = tw + 38;
+  var bh = 40;
   ctx.fillStyle = '#eef3ef';
-  roundRect(ctx, x, y - 36, bw, bh, 23);
+  roundRect(ctx, x, y - 31, bw, bh, 20);
   ctx.fill();
   ctx.fillStyle = '#1c5b46';
-  ctx.fillText(text, x + 22, y);
-  return y + 58;
+  ctx.fillText(text, x + 19, y);
+  return y + 52;
 }
 
 function generateCardImage(item, callback) {
@@ -507,20 +507,20 @@ function generateCardImage(item, callback) {
     // logo + 品牌名（横排居中）
     var brandText = '每日销售成长分享';
     ctx.textAlign = 'left';
-    ctx.font = '600 30px ' + F_SERIF;
+    ctx.font = '600 28px ' + F_SERIF;
     var brandW = ctx.measureText(brandText).width;
     var hasLogo = logoImg && logoImg.naturalWidth > 0;
-    var logoW = hasLogo ? 76 : 0;
-    var logoH = 76;
-    var gap = hasLogo ? 22 : 0;
+    var logoW = hasLogo ? 72 : 0;
+    var logoH = 72;
+    var gap = hasLogo ? 20 : 0;
     var startX = (W - (logoW + gap + brandW)) / 2;
     y = 96;
     if (hasLogo) {
-      ctx.drawImage(logoImg, startX, y - 50, logoW, logoH);
+      ctx.drawImage(logoImg, startX, y - 48, logoW, logoH);
     }
     ctx.fillStyle = '#201d19';
     ctx.fillText(brandText, startX + logoW + gap, y);
-    y += 66;
+    y += 64;
 
     // 分类标签（胶囊徽章）
     if (item.category) {
@@ -531,8 +531,8 @@ function generateCardImage(item, callback) {
 
     // 标题（衬线 + 字距）
     ctx.fillStyle = '#201d19';
-    y = drawTitle(ctx, item.title, PAD, y, maxW, 46, 70, 3);
-    y += 22;
+    y = drawTitle(ctx, item.title, PAD, y, maxW, 44, 66, 2);
+    y += 20;
 
     // 分隔线
     ctx.strokeStyle = '#e7e1d6'; ctx.lineWidth = 1;
@@ -542,21 +542,21 @@ function generateCardImage(item, callback) {
     // 真实场景
     if (item.scene) {
       y = drawLabel(ctx, '真实场景', '#1c5b46', PAD, y);
-      y = drawParagraph(ctx, item.scene, '#6b6359', PAD, maxW, y, 27, 46) + 30;
+      y = drawParagraph(ctx, item.scene, '#6b6359', PAD, maxW, y, 25, 40) + 26;
     }
 
     // 关键认知（金句 + 装饰引号）
     if (item.insight) {
       y = drawLabel(ctx, '关键认知', '#b08a45', PAD, y);
       ctx.fillStyle = '#b08a45';
-      ctx.font = '600 50px ' + F_SERIF;
+      ctx.font = '600 44px ' + F_SERIF;
       ctx.fillText('“', PAD, y + 2);
       ctx.fillStyle = '#201d19';
-      ctx.font = '600 35px ' + F_SERIF;
-      var qx = PAD + 40;
-      var ils = wrapText(ctx, item.insight, maxW - 46);
-      ils.forEach(function(ln) { ctx.fillText(ln, qx, y); y += 58; });
-      y += 34;
+      ctx.font = '600 32px ' + F_SERIF;
+      var qx = PAD + 36;
+      var ils = wrapText(ctx, item.insight, maxW - 42);
+      ils.forEach(function(ln) { ctx.fillText(ln, qx, y); y += 52; });
+      y += 30;
     }
 
     // 实战方法
@@ -564,53 +564,53 @@ function generateCardImage(item, callback) {
       y = drawLabel(ctx, '实战方法', '#1c5b46', PAD, y);
       item.methods.forEach(function(m, i) {
         var num = (i < 9 ? '0' : '') + (i + 1);
-        ctx.fillStyle = '#b08a45'; ctx.font = '600 25px ' + F_SERIF;
+        ctx.fillStyle = '#b08a45'; ctx.font = '600 22px ' + F_SERIF;
         ctx.fillText(num, PAD, y);
-        ctx.fillStyle = '#201d19'; ctx.font = '400 27px ' + F_SANS;
-        var mls = wrapText(ctx, m, maxW - 74);
+        ctx.fillStyle = '#201d19'; ctx.font = '400 25px ' + F_SANS;
+        var mls = wrapText(ctx, m, maxW - 70);
         mls.forEach(function(ln, j) {
-          ctx.fillText(ln, PAD + 74, y);
-          y += j < mls.length - 1 ? 44 : 50;
+          ctx.fillText(ln, PAD + 70, y);
+          y += j < mls.length - 1 ? 40 : 44;
         });
       });
-      y += 24;
+      y += 20;
     }
 
     // 举个例子（浅底块）
     if (item.example) {
-      ctx.font = '400 26px ' + F_SANS;
+      ctx.font = '400 25px ' + F_SANS;
     var exLines = wrapText(ctx, item.example, maxW - 22);
-    var exH = 22 + 50 + exLines.length * 44 + 32;
+    var exH = 20 + 48 + exLines.length * 40 + 28;
       ctx.fillStyle = '#fbf9f4';
       ctx.fillRect(PAD, y, maxW, exH);
       ctx.strokeStyle = '#efeae0'; ctx.lineWidth = 1;
       ctx.strokeRect(PAD + 0.5, y + 0.5, maxW - 1, exH - 1);
-      y += 22;
+      y += 20;
       y = drawLabel(ctx, '举个例子', '#1c5b46', PAD + 22, y);
-      y = drawParagraph(ctx, item.example, '#6b6359', PAD + 22, maxW - 22, y, 26, 44);
-      y += 32;
+      y = drawParagraph(ctx, item.example, '#6b6359', PAD + 22, maxW - 22, y, 25, 40);
+      y += 28;
     }
 
     // 今日行动（墨绿浅底块）
     if (item.action) {
-      ctx.font = '400 27px ' + F_SANS;
+      ctx.font = '400 25px ' + F_SANS;
     var acLines = wrapText(ctx, item.action, maxW - 22);
-    var acH = 22 + 50 + acLines.length * 44 + 32;
+    var acH = 20 + 48 + acLines.length * 40 + 28;
       ctx.fillStyle = '#eef3ef';
       ctx.fillRect(PAD, y, maxW, acH);
       ctx.fillStyle = '#1c5b46';
       ctx.fillRect(PAD, y, 4, acH);
-      y += 22;
+      y += 20;
       y = drawLabel(ctx, '今日行动', '#1c5b46', PAD + 22, y);
-      y = drawParagraph(ctx, item.action, '#1c5b46', PAD + 22, maxW - 22, y, 27, 44);
-      y += 32;
+      y = drawParagraph(ctx, item.action, '#1c5b46', PAD + 22, maxW - 22, y, 25, 40);
+      y += 28;
     }
 
     // 今日复盘
     if (item.review) {
       y = drawLabel(ctx, '今日复盘', '#1c5b46', PAD, y);
-      y = drawParagraph(ctx, item.review, '#201d19', PAD, maxW, y, 27, 46, false);
-      y += 20;
+      y = drawParagraph(ctx, item.review, '#201d19', PAD, maxW, y, 25, 40, false);
+      y += 16;
     }
 
     // 底部
