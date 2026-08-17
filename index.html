@@ -609,7 +609,7 @@ function generateCardImage(item, callback) {
     // 今日复盘
     if (item.review) {
       y = drawLabel(ctx, '今日复盘', '#1c5b46', PAD, y);
-      y = drawParagraph(ctx, item.review, '#201d19', PAD, maxW, y, 27, 46, true);
+      y = drawParagraph(ctx, item.review, '#201d19', PAD, maxW, y, 27, 46, false);
       y += 20;
     }
 
