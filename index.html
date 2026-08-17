@@ -431,21 +431,31 @@ function drawSpacedText(ctx, text, x, y, spacing) {
   return cx;
 }
 
-function drawLabel(ctx, text, color, x, y) {
+function drawLabel(ctx, text, color, x, y, size) {
+  var s = size || 19;
   ctx.fillStyle = color;
-  ctx.fillRect(x, y - 13, 4, 18);
-  ctx.font = '700 19px ' + F_SANS;
-  drawSpacedText(ctx, text, x + 15, y, 4);
-  return y + 42;
+  ctx.fillRect(x, y - 13 * (s / 19), 4, 18 * (s / 19));
+  ctx.font = '700 ' + Math.round(s) + 'px ' + F_SANS;
+  drawSpacedText(ctx, text, x + 15 * (s / 19), y, 4);
+  return y + 42 * (s / 19);
 }
 
-function drawTitle(ctx, text, x, y, maxW, size, lineH, spacing) {
-  ctx.font = '600 ' + size + 'px ' + F_SERIF;
+function drawTitle(ctx, text, x, y, maxW, size, lineH, spacing, extra, measureOnly) {
+  var sz = size, lh = lineH, sp = spacing;
+  ctx.font = '600 ' + Math.round(sz) + 'px ' + F_SERIF;
   var chars = String(text).split('');
-  var cx = x;
+  var cx = x, lines = 1;
+  if (measureOnly) {
+    chars.forEach(function(ch) {
+      var w = ctx.measureText(ch).width + sp;
+      if (cx + w > x + maxW && cx > x) { cx = x; lines += 1; }
+      cx += w;
+    });
+    return { lines: lines };
+  }
   chars.forEach(function(ch) {
-    var w = ctx.measureText(ch).width + spacing;
-    if (cx + w > x + maxW && cx > x) { cx = x; y += lineH; }
+    var w = ctx.measureText(ch).width + sp;
+    if (cx + w > x + maxW && cx > x) { cx = x; y += lh; }
     ctx.fillText(ch, cx, y);
     cx += w;
   });
@@ -454,7 +464,7 @@ function drawTitle(ctx, text, x, y, maxW, size, lineH, spacing) {
 
 function drawParagraph(ctx, text, color, x, maxW, y, size, lineH, italic) {
   ctx.fillStyle = color;
-  ctx.font = (italic ? 'italic ' : '') + '400 ' + size + 'px ' + F_SANS;
+  ctx.font = (italic ? 'italic ' : '') + '400 ' + Math.round(size) + 'px ' + F_SANS;
   var lines = wrapText(ctx, text, maxW);
   lines.forEach(function(ln) { ctx.fillText(ln, x, y); y += lineH; });
   return y;
@@ -470,156 +480,253 @@ function roundRect(ctx, x, y, w, h, r) {
   ctx.closePath();
 }
 
-function drawBadge(ctx, text, x, y) {
-  ctx.font = '600 19px ' + F_SANS;
+function drawBadge(ctx, text, x, y, size) {
+  var s = size || 19;
+  ctx.font = '600 ' + Math.round(s) + 'px ' + F_SANS;
   var tw = ctx.measureText(text).width;
-  var bw = tw + 38;
-  var bh = 40;
+  var bw = tw + 38 * (s / 19);
+  var bh = 40 * (s / 19);
   ctx.fillStyle = '#eef3ef';
-  roundRect(ctx, x, y - 31, bw, bh, 20);
+  roundRect(ctx, x, y - 31 * (s / 19), bw, bh, 20 * (s / 19));
   ctx.fill();
   ctx.fillStyle = '#1c5b46';
-  ctx.fillText(text, x + 19, y);
-  return y + 52;
+  ctx.fillText(text, x + 19 * (s / 19), y);
+  return y + 52 * (s / 19);
 }
 
 function generateCardImage(item, callback) {
   function run(logoImg) {
     var W = 750, PAD = 56, maxW = W - PAD * 2;
     var SCALE = 2;
+    var ctx = document.createElement('canvas').getContext('2d');
+
+    // ===== 自适应排版引擎：根据内容多少自动缩放字号与行距 =====
+    // 设计底座：标题44 / 金句32 / 正文25 / 标签19 / 徽章19 / 品牌28
+    // S 为整体密度系数：内容少→S 偏大（字号大、留白多）；内容多→S 偏小（字号小、更紧凑）
+    // 所有尺寸都由基地值 × S 派生，比例恒定，排版始终协调
+
+    function countLines(font, text, width) {
+      ctx.font = font;
+      return wrapText(ctx, text, width).length;
+    }
+
+    // 估算某一 S 下卡片总高度
+    function measureHeight(S) {
+      var h = 0;
+      // 头部：logo 行
+      h += 96 * S;
+      h += 64 * S;                        // brand 下方间隔
+
+      // 分类徽章
+      h += item.category ? 52 * S : 40 * S;
+
+      // 标题
+      h += drawTitle(ctx, item.title, 0, 0, maxW, 44 * S, 62 * S, 2, 0, true).lines * 62 * S;
+      h += 22 * S;
+
+      // 分隔线 + 间隔
+      h += 48 * S;
+
+      // 真实场景
+      if (item.scene) {
+        h += 42 * S;                       // 标签行
+        h += countLines('400 ' + (25 * S) + 'px ' + F_SANS, item.scene, maxW) * 40 * S + 26 * S;
+      }
+
+      // 关键认知
+      if (item.insight) {
+        h += 42 * S;
+        h += countLines('600 ' + (32 * S) + 'px ' + F_SERIF, item.insight, maxW - 42 * S) * 52 * S + 30 * S;
+      }
+
+      // 实战方法
+      if (item.methods && item.methods.length) {
+        h += 42 * S;
+        item.methods.forEach(function(m) {
+          var n = countLines('400 ' + (25 * S) + 'px ' + F_SANS, m, maxW - 70 * S);
+          h += n * 40 * S + 4 * S;
+        });
+        h += 20 * S;
+      }
+
+      // 举个例子（含块内边距 + 标签）
+      if (item.example) {
+        h += 20 * S + 48 * S + countLines('400 ' + (25 * S) + 'px ' + F_SANS, item.example, maxW - 22) * 40 * S + 28 * S;
+      }
+
+      // 今日行动
+      if (item.action) {
+        h += 20 * S + 48 * S + countLines('400 ' + (25 * S) + 'px ' + F_SANS, item.action, maxW - 22) * 40 * S + 28 * S;
+      }
+
+      // 今日复盘
+      if (item.review) {
+        h += 42 * S;
+        h += countLines('400 ' + (25 * S) + 'px ' + F_SANS, item.review, maxW) * 40 * S + 16 * S;
+      }
+
+      // 底部
+      h += 10 * S + 36 * S + 96 * S;
+
+      return h;
+    }
+
+    // 内容多寡评分（总字符数，权重不同的字段）
+    function contentScore() {
+      var s = 0;
+      s += (item.title || '').length * 2;
+      s += (item.scene || '').length;
+      s += (item.insight || '').length * 1.3;
+      (item.methods || []).forEach(function(m) { s += m.length; });
+      s += (item.example || '').length;
+      s += (item.action || '').length;
+      s += (item.review || '').length;
+      return s;
+    }
+
+    // 候选密度系数：从小(紧凑)到大(宽松)
+    var S = 1.0;
+    var score = contentScore();
+    if (score > 320)      S = 0.80;
+    else if (score > 240) S = 0.88;
+    else if (score > 170) S = 0.96;
+    else if (score > 110) S = 1.04;
+    else                  S = 1.12;
+
+    // 面积上限保护：iOS canvas 有像素面积上限，内容过长时把字号压到最小档并锁定
+    // 1500px 宽 × totalH×2 高 ≤ 约 1670 万 → 逻辑高 totalH ≤ 5100
+    var MAX_H = 5100;
+    function guardH(h) { return SCALE * h * 1500 <= 16700000 ? h : Math.min(h, MAX_H); }
+
+    // ===== 开始绘制 =====
+    var totalH = Math.round(measureHeight(S));
+    if (totalH > MAX_H) { S = 0.70; totalH = Math.round(measureHeight(S)); }
+    if (totalH > MAX_H) totalH = MAX_H;     // 极端情况兜底，避免白屏
     var c = document.createElement('canvas');
-    c.width = W * SCALE;
-    c.height = 4400 * SCALE;
-    var ctx = c.getContext('2d');
-    ctx.scale(SCALE, SCALE);
+    c.width = W * SCALE; c.height = totalH * SCALE;
+    var g = c.getContext('2d');
+    g.scale(SCALE, SCALE);
+
+    g.fillStyle = '#f6f3ec';
+    g.fillRect(0, 0, W, totalH);
     var y = 0;
 
-    ctx.fillStyle = '#f6f3ec';
-    ctx.fillRect(0, 0, W, 4400);
-
-    // logo + 品牌名（横排居中）
+    // 品牌 logo + 名称（横排居中）
     var brandText = '每日销售成长分享';
-    ctx.textAlign = 'left';
-    ctx.font = '600 28px ' + F_SERIF;
-    var brandW = ctx.measureText(brandText).width;
+    g.textAlign = 'left';
+    g.font = '600 ' + Math.round(28 * S) + 'px ' + F_SERIF;
+    var brandW = g.measureText(brandText).width;
     var hasLogo = logoImg && logoImg.naturalWidth > 0;
-    var logoW = hasLogo ? 72 : 0;
-    var logoH = 72;
-    var gap = hasLogo ? 20 : 0;
+    var logoW = hasLogo ? 72 * S : 0;
+    var logoH = 72 * S;
+    var gap = hasLogo ? 20 * S : 0;
     var startX = (W - (logoW + gap + brandW)) / 2;
-    y = 96;
-    if (hasLogo) {
-      ctx.drawImage(logoImg, startX, y - 48, logoW, logoH);
-    }
-    ctx.fillStyle = '#201d19';
-    ctx.fillText(brandText, startX + logoW + gap, y);
-    y += 64;
+    y = 96 * S;
+    if (hasLogo) g.drawImage(logoImg, startX, y - 48 * S, logoW, logoH);
+    g.fillStyle = '#201d19';
+    g.fillText(brandText, startX + logoW + gap, y);
+    y += 64 * S;
 
-    // 分类标签（胶囊徽章）
+    // 分类胶囊
     if (item.category) {
-      y = drawBadge(ctx, item.category, PAD, y);
+      y = drawBadge(g, item.category, PAD, y, 19 * S);
     } else {
-      y += 40;
+      y += 40 * S;
     }
 
-    // 标题（衬线 + 字距）
-    ctx.fillStyle = '#201d19';
-    y = drawTitle(ctx, item.title, PAD, y, maxW, 44, 66, 2);
-    y += 20;
+    // 标题
+    g.fillStyle = '#201d19';
+    y = drawTitle(g, item.title, PAD, y, maxW, 44 * S, 62 * S, 2, 0, false);
+    y += 22 * S;
 
     // 分隔线
-    ctx.strokeStyle = '#e7e1d6'; ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(PAD, y); ctx.lineTo(W - PAD, y); ctx.stroke();
-    y += 46;
+    g.strokeStyle = '#e7e1d6'; g.lineWidth = 1;
+    g.beginPath(); g.moveTo(PAD, y); g.lineTo(W - PAD, y); g.stroke();
+    y += 48 * S;
 
     // 真实场景
     if (item.scene) {
-      y = drawLabel(ctx, '真实场景', '#1c5b46', PAD, y);
-      y = drawParagraph(ctx, item.scene, '#6b6359', PAD, maxW, y, 25, 40) + 26;
+      y = drawLabel(g, '真实场景', '#1c5b46', PAD, y, 19 * S);
+      y = drawParagraph(g, item.scene, '#6b6359', PAD, maxW, y, 25 * S, 40 * S) + 26 * S;
     }
 
     // 关键认知（金句 + 装饰引号）
     if (item.insight) {
-      y = drawLabel(ctx, '关键认知', '#b08a45', PAD, y);
-      ctx.fillStyle = '#b08a45';
-      ctx.font = '600 44px ' + F_SERIF;
-      ctx.fillText('“', PAD, y + 2);
-      ctx.fillStyle = '#201d19';
-      ctx.font = '600 32px ' + F_SERIF;
-      var qx = PAD + 36;
-      var ils = wrapText(ctx, item.insight, maxW - 42);
-      ils.forEach(function(ln) { ctx.fillText(ln, qx, y); y += 52; });
-      y += 30;
+      y = drawLabel(g, '关键认知', '#b08a45', PAD, y, 19 * S);
+      g.fillStyle = '#b08a45';
+      g.font = '600 ' + Math.round(44 * S) + 'px ' + F_SERIF;
+      g.fillText('“', PAD, y + 2 * S);
+      g.fillStyle = '#201d19';
+      g.font = '600 ' + Math.round(32 * S) + 'px ' + F_SERIF;
+      var qx = PAD + 36 * S;
+      var ils = wrapText(g, item.insight, maxW - 42 * S);
+      ils.forEach(function(ln) { g.fillText(ln, qx, y); y += 52 * S; });
+      y += 30 * S;
     }
 
     // 实战方法
     if (item.methods && item.methods.length) {
-      y = drawLabel(ctx, '实战方法', '#1c5b46', PAD, y);
+      y = drawLabel(g, '实战方法', '#1c5b46', PAD, y, 19 * S);
       item.methods.forEach(function(m, i) {
         var num = (i < 9 ? '0' : '') + (i + 1);
-        ctx.fillStyle = '#b08a45'; ctx.font = '600 22px ' + F_SERIF;
-        ctx.fillText(num, PAD, y);
-        ctx.fillStyle = '#201d19'; ctx.font = '400 25px ' + F_SANS;
-        var mls = wrapText(ctx, m, maxW - 70);
+        g.fillStyle = '#b08a45'; g.font = '600 ' + Math.round(22 * S) + 'px ' + F_SERIF;
+        g.fillText(num, PAD, y);
+        g.fillStyle = '#201d19'; g.font = '400 ' + Math.round(25 * S) + 'px ' + F_SANS;
+        var mls = wrapText(g, m, maxW - 70 * S);
         mls.forEach(function(ln, j) {
-          ctx.fillText(ln, PAD + 70, y);
-          y += j < mls.length - 1 ? 40 : 44;
+          g.fillText(ln, PAD + 70 * S, y);
+          y += j < mls.length - 1 ? 40 * S : 44 * S;
         });
       });
-      y += 20;
+      y += 20 * S;
     }
 
     // 举个例子（浅底块）
     if (item.example) {
-      ctx.font = '400 25px ' + F_SANS;
-    var exLines = wrapText(ctx, item.example, maxW - 22);
-    var exH = 20 + 48 + exLines.length * 40 + 28;
-      ctx.fillStyle = '#fbf9f4';
-      ctx.fillRect(PAD, y, maxW, exH);
-      ctx.strokeStyle = '#efeae0'; ctx.lineWidth = 1;
-      ctx.strokeRect(PAD + 0.5, y + 0.5, maxW - 1, exH - 1);
-      y += 20;
-      y = drawLabel(ctx, '举个例子', '#1c5b46', PAD + 22, y);
-      y = drawParagraph(ctx, item.example, '#6b6359', PAD + 22, maxW - 22, y, 25, 40);
-      y += 28;
+      var exw = maxW - 22;
+      var exLines = countLines('400 ' + (25 * S) + 'px ' + F_SANS, item.example, exw);
+      var exH = 20 * S + 48 * S + exLines * 40 * S + 28 * S;
+      g.fillStyle = '#fbf9f4';
+      g.fillRect(PAD, y, maxW, exH);
+      g.strokeStyle = '#efeae0'; g.lineWidth = 1;
+      g.strokeRect(PAD + 0.5, y + 0.5, maxW - 1, exH - 1);
+      y += 20 * S;
+      y = drawLabel(g, '举个例子', '#1c5b46', PAD + 22, y, 19 * S);
+      y = drawParagraph(g, item.example, '#6b6359', PAD + 22, exw, y, 25 * S, 40 * S);
+      y += 28 * S;
     }
 
     // 今日行动（墨绿浅底块）
     if (item.action) {
-      ctx.font = '400 25px ' + F_SANS;
-    var acLines = wrapText(ctx, item.action, maxW - 22);
-    var acH = 20 + 48 + acLines.length * 40 + 28;
-      ctx.fillStyle = '#eef3ef';
-      ctx.fillRect(PAD, y, maxW, acH);
-      ctx.fillStyle = '#1c5b46';
-      ctx.fillRect(PAD, y, 4, acH);
-      y += 20;
-      y = drawLabel(ctx, '今日行动', '#1c5b46', PAD + 22, y);
-      y = drawParagraph(ctx, item.action, '#1c5b46', PAD + 22, maxW - 22, y, 25, 40);
-      y += 28;
+      var acw = maxW - 22;
+      var acLines = countLines('400 ' + (25 * S) + 'px ' + F_SANS, item.action, acw);
+      var acH = 20 * S + 48 * S + acLines * 40 * S + 28 * S;
+      g.fillStyle = '#eef3ef';
+      g.fillRect(PAD, y, maxW, acH);
+      g.fillStyle = '#1c5b46';
+      g.fillRect(PAD, y, 4, acH);
+      y += 20 * S;
+      y = drawLabel(g, '今日行动', '#1c5b46', PAD + 22, y, 19 * S);
+      y = drawParagraph(g, item.action, '#1c5b46', PAD + 22, acw, y, 25 * S, 40 * S);
+      y += 28 * S;
     }
 
     // 今日复盘
     if (item.review) {
-      y = drawLabel(ctx, '今日复盘', '#1c5b46', PAD, y);
-      y = drawParagraph(ctx, item.review, '#201d19', PAD, maxW, y, 25, 40, false);
-      y += 16;
+      y = drawLabel(g, '今日复盘', '#1c5b46', PAD, y, 19 * S);
+      y = drawParagraph(g, item.review, '#201d19', PAD, maxW, y, 25 * S, 40 * S, false);
+      y += 16 * S;
     }
 
     // 底部
-    y += 10;
-    ctx.strokeStyle = '#e7e1d6'; ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(PAD, y); ctx.lineTo(W - PAD, y); ctx.stroke();
-    y += 36;
-    ctx.fillStyle = '#a69d90'; ctx.font = '400 20px ' + F_SANS;
-    ctx.fillText('一线销售成长 · 每日一篇', PAD, y);
+    y += 10 * S;
+    g.strokeStyle = '#e7e1d6'; g.lineWidth = 1;
+    g.beginPath(); g.moveTo(PAD, y); g.lineTo(W - PAD, y); g.stroke();
+    y += 36 * S;
+    g.fillStyle = '#a69d90'; g.font = '400 ' + Math.round(20 * S) + 'px ' + F_SANS;
+    g.fillText('一线销售成长 · 每日一篇', PAD, y);
 
-    var finalH = y + 96;
-    var fc = document.createElement('canvas');
-    fc.width = W * SCALE; fc.height = finalH * SCALE;
-    var fctx = fc.getContext('2d');
-    fctx.drawImage(c, 0, 0, W * SCALE, finalH * SCALE, 0, 0, W * SCALE, finalH * SCALE);
-    callback(fc.toDataURL('image/png'));
+    callback(c.toDataURL('image/png'));
   }
 
   var img = new Image();
