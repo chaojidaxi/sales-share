@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>每日销售成长分享</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #fbfbfd;
+  --card-bg: #ffffff;
+  --text: #1d1d1f;
+  --text-sub: #6e6e73;
+  --text-light: #aeaeb2;
+  --blue: #0071e3;
+  --blue-light: #e8f1fd;
+  --border: #e8e8ed;
+  --shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.03);
+  --shadow-hover: 0 2px 8px rgba(0,0,0,0.06), 0 8px 24px rgba(0,0,0,0.06);
+  --radius: 20px;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Hero */
+.hero { text-align: center; padding: 72px 20px 40px; background: linear-gradient(180deg, #ffffff 0%, #fbfbfd 100%); }
+.hero h1 {
+  font-size: 36px; font-weight: 700; letter-spacing: -0.8px;
+  background: linear-gradient(135deg, #1d1d1f 0%, #4a4a4d 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  margin-bottom: 10px;
+}
+.hero .subtitle { font-size: 15px; color: var(--text-sub); margin-bottom: 6px; }
+.hero .author { font-size: 13px; color: var(--text-light); margin-bottom: 20px; }
+.hero .meta { display: inline-flex; gap: 28px; font-size: 13px; color: var(--text-light); font-weight: 500; }
+.hero .meta strong { color: var(--text); font-weight: 600; }
+
+/* Controls */
+.controls {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(251,251,253,0.82);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  border-bottom: 1px solid var(--border);
+  padding: 12px 20px 14px;
+}
+.controls-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; justify-content: center; margin-bottom: 8px; }
+.controls-row:last-child { margin-bottom: 0; }
+.row-label { font-size: 12px; color: var(--text-light); font-weight: 500; margin-right: 2px; }
+
+.date-select {
+  appearance: none; -webkit-appearance: none;
+  background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px;
+  padding: 7px 32px 7px 14px; font-size: 13px; font-weight: 500; color: var(--text); cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M3 4.5L6 7.5L9 4.5' stroke='%2386868b' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 11px center;
+}
+
+.chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.chip {
+  padding: 6px 14px; border: none; border-radius: 16px; background: transparent;
+  font-size: 13px; font-weight: 500; color: var(--text-sub); cursor: pointer; transition: all 0.2s;
+}
+.chip:hover { color: var(--text); background: rgba(0,0,0,0.04); }
+.chip.active { background: var(--text); color: #fff; }
+
+/* Content */
+.content { max-width: 720px; margin: 0 auto; padding: 28px 16px 80px; }
+.empty { text-align: center; padding: 80px 20px; color: var(--text-light); font-size: 14px; }
+
+/* Card */
+.card {
+  background: var(--card-bg); border-radius: var(--radius); padding: 26px 24px;
+  margin-bottom: 16px; box-shadow: var(--shadow);
+  transition: transform 0.3s cubic-bezier(0.25,0.46,0.45,0.94), box-shadow 0.3s;
+  animation: fadeInUp 0.45s ease both;
+}
+.card:hover { transform: translateY(-2px); box-shadow: var(--shadow-hover); }
+@keyframes fadeInUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+
+.card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+.card-title { font-size: 20px; font-weight: 700; letter-spacing: -0.3px; line-height: 1.4; }
+.copy-btn {
+  flex-shrink: 0; border: none; border-radius: 100px; padding: 8px 16px;
+  background: var(--blue); color: #fff; font-size: 13px; font-weight: 600; cursor: pointer;
+  transition: all 0.2s; white-space: nowrap;
+}
+.copy-btn:hover { background: #0077ed; transform: scale(1.03); }
+.copy-btn.done { background: #34c759; }
+
+.badges { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; }
+.badge { font-size: 11px; font-weight: 600; padding: 3px 11px; border-radius: 100px; letter-spacing: 0.2px; }
+.badge.obj-sales { background: #e8f1fd; color: #0071e3; }
+.badge.obj-manager { background: #f3eeff; color: #7c3aed; }
+.badge.obj-boss { background: #fff1e6; color: #c76a0a; }
+.badge.obj-all { background: #e8f8f1; color: #0f8a5f; }
+.badge.cat { background: #f0f0f2; color: var(--text-sub); }
+.badge.node { background: #fff8e6; color: #a9780a; }
+.badge.date { background: #f0f0f2; color: var(--text-sub); }
+
+/* Field blocks */
+.field { padding: 14px 16px 14px 18px; border-left: 3px solid; border-radius: 0 12px 12px 0; margin-bottom: 10px; }
+.field:last-child { margin-bottom: 0; }
+.field .f-label { font-size: 12px; font-weight: 700; margin-bottom: 4px; letter-spacing: 0.5px; }
+.field .f-body { font-size: 14px; color: var(--text); white-space: pre-wrap; }
+.field ul { margin: 0; padding-left: 18px; }
+.field li { font-size: 14px; margin-bottom: 4px; }
+.field li:last-child { margin-bottom: 0; }
+
+.field.scene { background: #f7f9fc; border-color: #0071e3; }
+.field.scene .f-label { color: #0071e3; }
+.field.insight { background: #faf8ff; border-color: #7c3aed; }
+.field.insight .f-label { color: #7c3aed; }
+.field.methods { background: #f6fbf8; border-color: #0f8a5f; }
+.field.methods .f-label { color: #0f8a5f; }
+.field.example { background: #fffaf3; border-color: #d98b1f; }
+.field.example .f-label { color: #c77a10; }
+.field.action { background: #fff5f5; border-color: #e24b4a; }
+.field.action .f-label { color: #d43b3a; }
+.field.review { background: #f2fafb; border-color: #14919c; }
+.field.review .f-label { color: #0e7a84; }
+
+@media (max-width: 560px) {
+  .hero { padding: 48px 16px 28px; }
+  .hero h1 { font-size: 28px; }
+  .card { padding: 22px 18px; }
+  .card-title { font-size: 18px; }
+}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <h1>每日销售成长分享</h1>
+  <div class="subtitle">一线销售成长与经营实战 · 每天一篇能落地</div>
+  <div class="author">大喜 · 内训老师</div>
+  <div class="meta">
+    <span>分享 <strong id="stat-total">0</strong> 篇</span>
+    <span>更新时间 <strong id="stat-updated">—</strong></span>
+  </div>
+</div>
+
+<div class="controls" id="controls">
+  <div class="controls-row">
+    <span class="row-label">日期</span>
+    <select class="date-select" id="dateSelect"></select>
+    <span class="row-label">对象</span>
+    <div class="chips" id="objectChips"></div>
+  </div>
+  <div class="controls-row">
+    <span class="row-label">分类</span>
+    <div class="chips" id="categoryChips"></div>
+  </div>
+  <div class="controls-row">
+    <span class="row-label">节点</span>
+    <div class="chips" id="nodeChips"></div>
+  </div>
+</div>
+
+<div class="content" id="content"></div>
+
+<script>
+var DB = null;
+var state = { date: '全部', object: '全部', category: '全部', node: '全部' };
+
+function fetchData() {
+  return fetch('data.json?v=' + Date.now())
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      DB = d;
+      document.getElementById('stat-updated').textContent = d.updated || '—';
+      buildControls(d);
+      render();
+    })
+    .catch(function(e) {
+      document.getElementById('content').innerHTML = '<div class="empty">数据加载失败，请稍后刷新</div>';
+    });
+}
+
+function flatten(d) {
+  var arr = [];
+  var dates = d.dates || [];
+  dates.forEach(function(date) {
+    var list = (d.data && d.data[date]) || [];
+    list.forEach(function(item) { arr.push(Object.assign({ date: date }, item)); });
+  });
+  return arr;
+}
+
+function buildControls(d) {
+  var dateSel = document.getElementById('dateSelect');
+  dateSel.innerHTML = '';
+  var allDates = ['全部'].concat(d.dates || []);
+  allDates.forEach(function(dt) {
+    var o = document.createElement('option');
+    o.value = dt; o.textContent = dt;
+    dateSel.appendChild(o);
+  });
+  dateSel.value = state.date;
+  dateSel.onchange = function() { state.date = this.value; render(); };
+
+  buildChips('objectChips', 'object', (d.objects || []), function(v) { state.object = v; render(); });
+  buildChips('categoryChips', 'category', (d.categories || []), function(v) { state.category = v; render(); });
+  buildChips('nodeChips', 'node', (d.nodes || []), function(v) { state.node = v; render(); });
+}
+
+function buildChips(id, key, values, onPick) {
+  var wrap = document.getElementById(id);
+  wrap.innerHTML = '';
+  var list = ['全部'].concat(values);
+  list.forEach(function(v) {
+    var b = document.createElement('button');
+    b.className = 'chip' + (state[key] === v ? ' active' : '');
+    b.textContent = v;
+    b.onclick = function() {
+      state[key] = v;
+      Array.prototype.forEach.call(wrap.children, function(c) { c.classList.remove('active'); });
+      b.classList.add('active');
+      onPick(v);
+    };
+    wrap.appendChild(b);
+  });
+}
+
+function match(item) {
+  if (state.object !== '全部' && item.object !== state.object) return false;
+  if (state.category !== '全部' && item.category !== state.category) return false;
+  if (state.node !== '全部' && item.node !== state.node) return false;
+  if (state.date !== '全部' && item.date !== state.date) return false;
+  return true;
+}
+
+function objClass(obj) {
+  if (obj === '销售') return 'obj-sales';
+  if (obj === '店长') return 'obj-manager';
+  if (obj === '老板') return 'obj-boss';
+  return 'obj-all';
+}
+
+function esc(s) {
+  return String(s).replace(/[&<>"']/g, function(c) {
+    return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c];
+  });
+}
+
+function field(label, cls, bodyHtml) {
+  return '<div class="field ' + cls + '"><div class="f-label">' + label + '</div><div class="f-body">' + bodyHtml + '</div></div>';
+}
+
+function renderCard(item) {
+  var methodsHtml = item.methods && item.methods.length
+    ? '<ul>' + item.methods.map(function(m) { return '<li>' + esc(m) + '</li>'; }).join('') + '</ul>'
+    : '';
+  var blocks = '';
+  if (item.scene) blocks += field('真实场景', 'scene', esc(item.scene));
+  if (item.insight) blocks += field('关键认知', 'insight', esc(item.insight));
+  if (methodsHtml) blocks += field('实战方法', 'methods', methodsHtml);
+  if (item.example) blocks += field('举个例子', 'example', esc(item.example));
+  if (item.action) blocks += field('今日行动', 'action', esc(item.action));
+  if (item.review) blocks += field('今日复盘', 'review', esc(item.review));
+
+  return '<div class="card">' +
+    '<div class="card-top">' +
+      '<div class="card-title">' + esc(item.title) + '</div>' +
+      '<button class="copy-btn" data-idx="' + item.__idx + '">复制全文</button>' +
+    '</div>' +
+    '<div class="badges">' +
+      '<span class="badge ' + objClass(item.object) + '">' + esc(item.object) + '</span>' +
+      '<span class="badge cat">' + esc(item.category) + '</span>' +
+      '<span class="badge node">' + esc(item.node) + '</span>' +
+      '<span class="badge date">' + esc(item.date) + '</span>' +
+    '</div>' +
+    blocks +
+    '</div>';
+}
+
+function plainText(item) {
+  var lines = [];
+  lines.push('【今日销售分享】');
+  lines.push('');
+  lines.push(item.title);
+  lines.push('');
+  lines.push('场景：' + item.scene);
+  lines.push('');
+  lines.push('关键认知：' + item.insight);
+  lines.push('');
+  lines.push('实战方法：');
+  (item.methods || []).forEach(function(m, i) { lines.push((i + 1) + '. ' + m); });
+  lines.push('');
+  lines.push('举个例子：' + item.example);
+  lines.push('');
+  lines.push('今日行动：' + item.action);
+  lines.push('');
+  lines.push('今日复盘：' + item.review);
+  return lines.join('\n');
+}
+
+var ALL = [];
+function render() {
+  var content = document.getElementById('content');
+  if (!DB) return;
+  var list = flatten(DB).filter(match);
+  document.getElementById('stat-total').textContent = list.length;
+  ALL = list;
+  if (!list.length) {
+    content.innerHTML = '<div class="empty">这个维度下暂时还没有内容，换个筛选看看</div>';
+    return;
+  }
+  list.forEach(function(item, i) { item.__idx = i; });
+  content.innerHTML = list.map(renderCard).join('');
+}
+
+document.getElementById('content').addEventListener('click', function(e) {
+  var btn = e.target.closest('.copy-btn');
+  if (!btn) return;
+  var idx = parseInt(btn.getAttribute('data-idx'), 10);
+  var item = ALL[idx];
+  if (!item) return;
+  var text = plainText(item);
+  function done() {
+    btn.textContent = '已复制';
+    btn.classList.add('done');
+    setTimeout(function() { btn.textContent = '复制全文'; btn.classList.remove('done'); }, 1600);
+  }
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(done).catch(function() { fallbackCopy(text); done(); });
+  } else {
+    fallbackCopy(text); done();
+  }
+});
+
+function fallbackCopy(text) {
+  var ta = document.createElement('textarea');
+  ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+  document.body.appendChild(ta); ta.select();
+  try { document.execCommand('copy'); } catch (e) {}
+  document.body.removeChild(ta);
+}
+
+fetchData();
+</script>
+</body>
+</html>
