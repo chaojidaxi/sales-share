@@ -504,23 +504,23 @@ function generateCardImage(item, callback) {
     ctx.fillStyle = '#f6f3ec';
     ctx.fillRect(0, 0, W, 4400);
 
-    // logo
-    if (logoImg && logoImg.naturalWidth > 0) {
-      var logoW = 108;
-      var logoH = logoW * logoImg.naturalHeight / logoImg.naturalWidth;
-      ctx.drawImage(logoImg, (W - logoW) / 2, 90, logoW, logoH);
-      y = 90 + logoH + 42;
-    } else {
-      y = 118;
-    }
-
-    // 品牌名
-    ctx.textAlign = 'center';
-    ctx.fillStyle = '#201d19';
-    ctx.font = '600 27px ' + F_SERIF;
-    ctx.fillText('每日销售成长分享', W / 2, y);
-    y += 66;
+    // logo + 品牌名（横排居中）
+    var brandText = '每日销售成长分享';
     ctx.textAlign = 'left';
+    ctx.font = '600 30px ' + F_SERIF;
+    var brandW = ctx.measureText(brandText).width;
+    var hasLogo = logoImg && logoImg.naturalWidth > 0;
+    var logoW = hasLogo ? 76 : 0;
+    var logoH = 76;
+    var gap = hasLogo ? 22 : 0;
+    var startX = (W - (logoW + gap + brandW)) / 2;
+    y = 96;
+    if (hasLogo) {
+      ctx.drawImage(logoImg, startX, y - 50, logoW, logoH);
+    }
+    ctx.fillStyle = '#201d19';
+    ctx.fillText(brandText, startX + logoW + gap, y);
+    y += 66;
 
     // 分类标签（胶囊徽章）
     if (item.category) {
@@ -549,12 +549,12 @@ function generateCardImage(item, callback) {
     if (item.insight) {
       y = drawLabel(ctx, '关键认知', '#b08a45', PAD, y);
       ctx.fillStyle = '#b08a45';
-      ctx.font = '600 88px ' + F_SERIF;
-      ctx.fillText('“', PAD - 8, y + 16);
+      ctx.font = '600 50px ' + F_SERIF;
+      ctx.fillText('“', PAD, y + 2);
       ctx.fillStyle = '#201d19';
       ctx.font = '600 35px ' + F_SERIF;
-      var qx = PAD + 52;
-      var ils = wrapText(ctx, item.insight, maxW - 58);
+      var qx = PAD + 40;
+      var ils = wrapText(ctx, item.insight, maxW - 46);
       ils.forEach(function(ln) { ctx.fillText(ln, qx, y); y += 58; });
       y += 34;
     }
