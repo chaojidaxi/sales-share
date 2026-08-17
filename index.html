@@ -55,28 +55,27 @@ body::before {
 .masthead {
   position: relative;
   text-align: center;
-  padding: 34px 20px 24px;
+  padding: 30px 20px 20px;
   background:
     radial-gradient(760px 300px at 50% -10%, rgba(176,138,69,0.07), transparent 65%),
     linear-gradient(180deg, #faf7f0 0%, var(--paper) 100%);
 }
-.masthead .eyebrow {
-  display: inline-flex; align-items: center; gap: 12px;
-  font-size: 10.5px; font-weight: 600; letter-spacing: 4px;
-  color: var(--accent); text-transform: uppercase;
-  margin-bottom: 12px;
-}
-.masthead .eyebrow::before, .masthead .eyebrow::after {
-  content: ""; width: 28px; height: 1px; background: var(--line);
-}
 .masthead h1 {
   font-family: 'Noto Serif SC', Georgia, 'Songti SC', 'STSong', serif;
-  font-size: 32px; font-weight: 600; letter-spacing: -0.5px; line-height: 1.15;
-  color: var(--ink); margin-bottom: 8px;
+  font-size: 30px; font-weight: 600; letter-spacing: -0.5px; line-height: 1.15;
+  color: var(--ink); margin-bottom: 14px;
 }
-.masthead .subtitle { font-size: 13.5px; color: var(--ink-2); }
-.masthead .meta-inline { font-size: 12px; color: var(--ink-3); margin-top: 10px; letter-spacing: 0.5px; }
-.masthead .meta-inline strong { color: var(--ink); font-weight: 600; }
+.masthead-date { margin-bottom: 10px; }
+.masthead-date .date-select {
+  font-size: 14px; font-weight: 600; color: var(--ink);
+  padding: 6px 32px 6px 16px;
+  border: 1px solid var(--line); border-radius: 100px;
+  background-color: var(--card);
+  background-position: right 14px center;
+  text-align: center;
+}
+.masthead .subtitle { font-size: 13px; color: var(--ink-3); }
+.masthead .subtitle strong { color: var(--ink); font-weight: 600; }
 
 /* ===== Controls ===== */
 .controls {
@@ -225,11 +224,9 @@ body::before {
 .article .foot-rule { width: 100%; height: 1px; background: var(--line-soft); margin-top: 34px; }
 
 @media (max-width: 560px) {
-  .masthead { padding: 16px 16px 12px; }
-  .masthead .eyebrow { display: none; }
-  .masthead h1 { font-size: 22px; letter-spacing: -0.3px; margin-bottom: 4px; }
+  .masthead { padding: 18px 16px 14px; }
+  .masthead h1 { font-size: 22px; letter-spacing: -0.3px; margin-bottom: 10px; }
   .masthead .subtitle { font-size: 12px; }
-  .masthead .meta-inline { display: none; }
   .article { padding: 30px 22px; }
   .article h2 { font-size: 23px; }
   .insight { font-size: 19px; }
@@ -250,16 +247,15 @@ body::before {
 <body>
 
 <div class="masthead">
-  <div class="eyebrow">Daily Sales Playbook</div>
   <h1>每日销售成长分享</h1>
-  <div class="subtitle">不灌鸡汤，只给能落地的认知与方法</div>
-  <div class="meta-inline">已分享 <strong id="stat-total">0</strong> 篇 · 更新于 <strong id="stat-date">—</strong></div>
+  <div class="masthead-date">
+    <select class="date-select" id="dateSelect"></select>
+  </div>
+  <div class="subtitle">不灌鸡汤，只给能落地的认知与方法 · 共 <strong id="stat-total">0</strong> 篇</div>
 </div>
 
 <div class="controls" id="controls">
   <div class="controls-row">
-    <span class="row-label">日期</span>
-    <select class="date-select" id="dateSelect"></select>
     <span class="row-label">分类</span>
     <div class="chips" id="categoryChips"></div>
   </div>
@@ -276,7 +272,6 @@ function fetchData() {
     .then(function(r) { return r.json(); })
     .then(function(d) {
       DB = d;
-      document.getElementById('stat-date').textContent = (d.updated || '—').slice(5, 10);
       buildControls(d);
       render();
     })
@@ -301,13 +296,19 @@ function buildControls(d) {
   var allDates = ['全部'].concat(d.dates || []);
   allDates.forEach(function(dt) {
     var o = document.createElement('option');
-    o.value = dt; o.textContent = dt;
+    o.value = dt; o.textContent = (dt === '全部') ? '全部日期' : formatDate(dt);
     dateSel.appendChild(o);
   });
   dateSel.value = state.date;
   dateSel.onchange = function() { state.date = this.value; render(); };
 
   buildChips('categoryChips', 'category', (d.categories || []), function(v) { state.category = v; render(); });
+}
+
+function formatDate(dt) {
+  var p = String(dt).split('-');
+  if (p.length === 3) return parseInt(p[1], 10) + '月' + parseInt(p[2], 10) + '日';
+  return dt;
 }
 
 function buildChips(id, key, values, onPick) {
@@ -466,6 +467,29 @@ function drawParagraph(ctx, text, color, x, maxW, y, size, lineH, italic) {
   return y;
 }
 
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+
+function drawBadge(ctx, text, x, y) {
+  ctx.font = '600 22px ' + F_SANS;
+  var tw = ctx.measureText(text).width;
+  var bw = tw + 44;
+  var bh = 46;
+  ctx.fillStyle = '#eef3ef';
+  roundRect(ctx, x, y - 36, bw, bh, 23);
+  ctx.fill();
+  ctx.fillStyle = '#1c5b46';
+  ctx.fillText(text, x + 22, y);
+  return y + 58;
+}
+
 function generateCardImage(item, callback) {
   function run(logoImg) {
     var W = 750, PAD = 56, maxW = W - PAD * 2;
@@ -498,20 +522,22 @@ function generateCardImage(item, callback) {
     y += 66;
     ctx.textAlign = 'left';
 
-    // 分类标签
-    ctx.fillStyle = '#1c5b46'; ctx.font = '600 25px ' + F_SANS;
-    ctx.fillText('· ' + (item.category || ''), PAD, y);
-    y += 50;
+    // 分类标签（胶囊徽章）
+    if (item.category) {
+      y = drawBadge(ctx, item.category, PAD, y);
+    } else {
+      y += 40;
+    }
 
     // 标题（衬线 + 字距）
     ctx.fillStyle = '#201d19';
-    y = drawTitle(ctx, item.title, PAD, y, maxW, 46, 70, 2);
-    y += 20;
+    y = drawTitle(ctx, item.title, PAD, y, maxW, 46, 70, 3);
+    y += 22;
 
     // 分隔线
     ctx.strokeStyle = '#e7e1d6'; ctx.lineWidth = 1;
     ctx.beginPath(); ctx.moveTo(PAD, y); ctx.lineTo(W - PAD, y); ctx.stroke();
-    y += 48;
+    y += 46;
 
     // 真实场景
     if (item.scene) {
