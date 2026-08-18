@@ -8,7 +8,12 @@
 <meta http-equiv="Expires" content="0">
 <title>每日销售成长分享 · The Daily Sales Playbook</title>
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link href="https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5/600.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5/700.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5/800.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5/900.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/@fontsource/zcool-xiaowei@5/chinese-simplified-400.css" rel="stylesheet">
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -80,8 +85,8 @@ body::before {
 }
 .head-title-block { flex: 0 0 auto; text-align: left; }
 .head-title-block .brand-title {
-  font-family: 'Noto Serif SC', Georgia, 'Songti SC', 'STSong', serif;
-  font-size: 30px; font-weight: 600; letter-spacing: 1.5px; line-height: 1.1;
+  font-family: 'Noto Serif SC', 'Songti SC', 'STSong', 'SimSun', serif;
+  font-size: 30px; font-weight: 700; letter-spacing: 0; line-height: 1.1;
   color: var(--ink);
 }
 .site-head .subtitle {
@@ -676,8 +681,8 @@ function showCardModal(dataUrl, title) {
   showCardModalImage(dataUrl, title);
 }
 
-var F_SERIF = "'Noto Serif SC', Georgia, 'Songti SC', 'SimSun', serif";
-var F_SANS = "-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Hiragino Sans GB', sans-serif";
+var F_SERIF = '"Noto Serif SC", "Songti SC", "STSong", "SimSun", serif';
+var F_SANS = '"Noto Sans SC", -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", sans-serif';
 
 function wrapText(ctx, text, maxWidth) {
   var chars = String(text).split('');
@@ -860,7 +865,7 @@ function generateCardImage(item, callback) {
     var F_QUOTE = 29, LH_QUOTE = 48;      // 金句(认知)
     var F_BODY  = 24, LH_BODY  = 40;      // 正文
     var F_LABEL = 15, LH_LABEL = 22;      // 小标签
-    var F_BRAND = 56;                     // 品牌名（次主角，给 logo 让位）
+    var F_BRAND = 64;                     // 品牌名（最大，主角）
     var F_FOOT  = 16;                     // 页脚
     var F_NUM   = 19;                     // 方法编号
 
@@ -914,34 +919,22 @@ function generateCardImage(item, callback) {
         var ruleX = PAD + logoD + 18 * S;
         g.fillStyle = LINE_C;
         g.fillRect(ruleX, topY + 16 * S, 1, topH - 32 * S);
-        // 品牌名：竖线右侧，垂直居中
-        g.font = brandFont;
+        // 品牌名：竖线右侧，垂直居中（极粗衬线 + 紧凑字距）
+        g.font = '700 ' + Math.round(F_BRAND * S) + 'px "Noto Serif SC", "STSong", "SimSun", serif';
         g.fillStyle = INK;
         g.textBaseline = 'middle';
         var nameCY = topY + topH / 2;
         g.fillText('每日销售成长分享', ruleX + 18 * S, nameCY);
         g.textBaseline = 'alphabetic';
 
-        // 分类胶囊：右上角，与品牌名垂直居中
-        if (hasCat) {
-          var cx = W - PAD - catBW;
-          var cy = nameCY - catBH / 2;
-          g.strokeStyle = ACCENT; g.lineWidth = 1.8;
-          roundRect(g, cx, cy, catBW, catBH, catBH / 2); g.stroke();
-          g.fillStyle = ACCENT;
-          g.font = '600 ' + Math.round(catFontPx) + 'px ' + F_SANS;
-          g.textBaseline = 'middle';
-          g.fillText(item.category, cx + 20 * S, cy + catBH / 2 + 1 * S);
-          g.textBaseline = 'alphabetic';
-        }
-
         drawRule(g, PAD, maxW, y + 22 * S, LINE_C);
       }
       y += 22 * S + 30 * S;
 
 
-      // --- 标题（左对齐深黑大粗体，绝对主角）---
-      var tFont = '700 ' + Math.round(F_TITLE * S) + 'px ' + F_SERIF;
+
+      // --- 标题（左对齐深黑大粗体，绝对主角）+ 分类胶囊在标题右下角 ---
+      var tFont = '700 ' + Math.round(F_TITLE * S) + 'px "Noto Serif SC", "STSong", "SimSun", serif';
       var tLinesArr = (function() { ctx.font = tFont; return wrapText(ctx, item.title, maxW); })();
       // 孤字平衡：末行 ≤2 字时收窄宽度重排，避免单字独占一行
       if (tLinesArr.length > 1 && tLinesArr[tLinesArr.length - 1].length <= 2) {
@@ -953,6 +946,19 @@ function generateCardImage(item, callback) {
         g.font = tFont; g.fillStyle = INK;
         var ty = y + F_TITLE * S;
         tLinesArr.forEach(function(ln) { g.fillText(ln, PAD, ty); ty += LH_TITLE * S; });
+        // 分类胶囊：标题区域右下角（标题下方、右对齐）
+        if (hasCat) {
+          var titleLastBaseline = y + F_TITLE * S + (tLinesArr.length - 1) * LH_TITLE * S;
+          var cx = W - PAD - catBW;
+          var cy = titleLastBaseline + 10 * S;
+          g.strokeStyle = ACCENT; g.lineWidth = 1.8;
+          roundRect(g, cx, cy, catBW, catBH, catBH / 2); g.stroke();
+          g.fillStyle = ACCENT;
+          g.font = '600 ' + Math.round(catFontPx) + 'px ' + F_SANS;
+          g.textBaseline = 'middle';
+          g.fillText(item.category, cx + 20 * S, cy + catBH / 2 + 1 * S);
+          g.textBaseline = 'alphabetic';
+        }
       }
       y += (tLinesArr.length - 1) * LH_TITLE * S + F_TITLE * S + 18 * S;
       // 标题下主色短粗线（力量感）
