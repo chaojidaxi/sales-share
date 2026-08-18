@@ -86,7 +86,7 @@ body::before {
 .head-title-block { flex: 0 0 auto; text-align: left; }
 .head-title-block .brand-title {
   font-family: 'Noto Serif SC', 'Songti SC', 'STSong', 'SimSun', serif;
-  font-size: 30px; font-weight: 700; letter-spacing: 0; line-height: 1.1;
+  font-size: 32px; font-weight: 600; letter-spacing: 0; line-height: 1.1;
   color: var(--ink);
 }
 .site-head .subtitle {
@@ -860,12 +860,12 @@ function generateCardImage(item, callback) {
     else if (sc > 70)  S = 1.10;
     else               S = 1.18;
 
-    // 字号底座（S=1 时）—— 克制杂志风：标题=主角，品牌名=刊头
-    var F_TITLE = 50, LH_TITLE = 70;      // 大标题（主角）
+    // 字号底座（S=1 时）—— 主题主导：品牌名=主题最大，标题=次要自然
+    var F_TITLE = 38, LH_TITLE = 56;      // 大标题（次要，自然黑体）
     var F_QUOTE = 29, LH_QUOTE = 48;      // 金句(认知)
     var F_BODY  = 24, LH_BODY  = 40;      // 正文
     var F_LABEL = 15, LH_LABEL = 22;      // 小标签
-    var F_BRAND = 46;                     // 品牌名（刊头，轻量）
+    var F_BRAND = 62;                     // 品牌名（主题，最大）
     var F_FOOT  = 16;                     // 页脚
     var F_NUM   = 19;                     // 方法编号
 
@@ -892,7 +892,7 @@ function generateCardImage(item, callback) {
       var EX_BG = '#f6f5f4';         // 举例块底
 
       // --- 顶部三段：左方形logo + 细竖分隔 + 品牌名  |  右上分类胶囊 ---
-      var logoD = 132 * S;             // 方形 logo 边长（不裁切，保留完整得米字样）
+      var logoD = 120 * S;             // 方形 logo 边长（不裁切，保留完整得米字样）
       var brandFont = '600 ' + Math.round(F_BRAND * S) + 'px ' + F_SERIF;
       ctx.font = brandFont;
       var brandTextW = ctx.measureText('每日销售成长分享').width;
@@ -919,8 +919,8 @@ function generateCardImage(item, callback) {
         var ruleX = PAD + logoD + 18 * S;
         g.fillStyle = LINE_C;
         g.fillRect(ruleX, topY + 16 * S, 1, topH - 32 * S);
-        // 品牌名：竖线右侧，垂直居中（克制刊头风格）
-        g.font = '500 ' + Math.round(F_BRAND * S) + 'px "Noto Serif SC", "STSong", "SimSun", serif';
+        // 品牌名（主题，最大）：衬线 + 中粗 600 + 紧凑字距
+        g.font = '600 ' + Math.round(F_BRAND * S) + 'px "Noto Serif SC", "STSong", "SimSun", serif';
         g.fillStyle = INK;
         g.textBaseline = 'middle';
         var nameCY = topY + topH / 2;
@@ -933,8 +933,8 @@ function generateCardImage(item, callback) {
 
 
 
-      // --- 标题（深黑大粗体，主角）---
-      var tFont = '700 ' + Math.round(F_TITLE * S) + 'px "Noto Serif SC", "STSong", "SimSun", serif';
+      // --- 标题（次要，自然黑体）---
+      var tFont = '500 ' + Math.round(F_TITLE * S) + 'px "Noto Sans SC", "PingFang SC", "Hiragino Sans GB", sans-serif';
       var tLinesArr = (function() { ctx.font = tFont; return wrapText(ctx, item.title, maxW); })();
       // 孤字平衡：末行 ≤2 字时收窄宽度重排，避免单字独占一行
       if (tLinesArr.length > 1 && tLinesArr[tLinesArr.length - 1].length <= 2) {
