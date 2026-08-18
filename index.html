@@ -860,12 +860,12 @@ function generateCardImage(item, callback) {
     else if (sc > 70)  S = 1.10;
     else               S = 1.18;
 
-    // 字号底座（S=1 时）—— 微信群分享海报：白底大字报，深色标题是主角
-    var F_TITLE = 44, LH_TITLE = 64;      // 大标题（次主角）
+    // 字号底座（S=1 时）—— 克制杂志风：标题=主角，品牌名=刊头
+    var F_TITLE = 50, LH_TITLE = 70;      // 大标题（主角）
     var F_QUOTE = 29, LH_QUOTE = 48;      // 金句(认知)
     var F_BODY  = 24, LH_BODY  = 40;      // 正文
     var F_LABEL = 15, LH_LABEL = 22;      // 小标签
-    var F_BRAND = 64;                     // 品牌名（最大，主角）
+    var F_BRAND = 46;                     // 品牌名（刊头，轻量）
     var F_FOOT  = 16;                     // 页脚
     var F_NUM   = 19;                     // 方法编号
 
@@ -892,7 +892,7 @@ function generateCardImage(item, callback) {
       var EX_BG = '#f6f5f4';         // 举例块底
 
       // --- 顶部三段：左方形logo + 细竖分隔 + 品牌名  |  右上分类胶囊 ---
-      var logoD = 168 * S;             // 方形 logo 边长（不裁切，保留完整得米字样）
+      var logoD = 132 * S;             // 方形 logo 边长（不裁切，保留完整得米字样）
       var brandFont = '600 ' + Math.round(F_BRAND * S) + 'px ' + F_SERIF;
       ctx.font = brandFont;
       var brandTextW = ctx.measureText('每日销售成长分享').width;
@@ -919,8 +919,8 @@ function generateCardImage(item, callback) {
         var ruleX = PAD + logoD + 18 * S;
         g.fillStyle = LINE_C;
         g.fillRect(ruleX, topY + 16 * S, 1, topH - 32 * S);
-        // 品牌名：竖线右侧，垂直居中（极粗衬线 + 紧凑字距）
-        g.font = '700 ' + Math.round(F_BRAND * S) + 'px "Noto Serif SC", "STSong", "SimSun", serif';
+        // 品牌名：竖线右侧，垂直居中（克制刊头风格）
+        g.font = '500 ' + Math.round(F_BRAND * S) + 'px "Noto Serif SC", "STSong", "SimSun", serif';
         g.fillStyle = INK;
         g.textBaseline = 'middle';
         var nameCY = topY + topH / 2;
@@ -933,7 +933,7 @@ function generateCardImage(item, callback) {
 
 
 
-      // --- 标题（左对齐深黑大粗体，绝对主角）+ 分类胶囊在标题右下角 ---
+      // --- 标题（深黑大粗体，主角）---
       var tFont = '700 ' + Math.round(F_TITLE * S) + 'px "Noto Serif SC", "STSong", "SimSun", serif';
       var tLinesArr = (function() { ctx.font = tFont; return wrapText(ctx, item.title, maxW); })();
       // 孤字平衡：末行 ≤2 字时收窄宽度重排，避免单字独占一行
@@ -946,19 +946,6 @@ function generateCardImage(item, callback) {
         g.font = tFont; g.fillStyle = INK;
         var ty = y + F_TITLE * S;
         tLinesArr.forEach(function(ln) { g.fillText(ln, PAD, ty); ty += LH_TITLE * S; });
-        // 分类胶囊：标题区域右下角（标题下方、右对齐）
-        if (hasCat) {
-          var titleLastBaseline = y + F_TITLE * S + (tLinesArr.length - 1) * LH_TITLE * S;
-          var cx = W - PAD - catBW;
-          var cy = titleLastBaseline + 10 * S;
-          g.strokeStyle = ACCENT; g.lineWidth = 1.8;
-          roundRect(g, cx, cy, catBW, catBH, catBH / 2); g.stroke();
-          g.fillStyle = ACCENT;
-          g.font = '600 ' + Math.round(catFontPx) + 'px ' + F_SANS;
-          g.textBaseline = 'middle';
-          g.fillText(item.category, cx + 20 * S, cy + catBH / 2 + 1 * S);
-          g.textBaseline = 'alphabetic';
-        }
       }
       y += (tLinesArr.length - 1) * LH_TITLE * S + F_TITLE * S + 18 * S;
       // 标题下主色短粗线（力量感）
@@ -1081,16 +1068,25 @@ function generateCardImage(item, callback) {
         y += countLines('400 ' + (F_BODY * S) + 'px ' + F_SANS, item.review, maxW) * LH_BODY * S + 30 * S;
       }
 
-      // --- 底部页脚：细线 + 左品牌口号 / 右每日更新 ---
+      // --- 底部页脚：细线 + 左品牌口号 / 右分类胶囊（替代"每日更新"）---
       if (draw) drawRule(g, PAD, maxW, y, LINE_C);
       y += 30 * S;
       if (draw) {
         g.font = '500 ' + Math.round(F_FOOT * S) + 'px ' + F_SANS;
         g.fillStyle = FAINT;
         g.fillText('每日销售成长 · 一线实战', PAD, y);
-        var rt = '每日更新';
-        var rw = ctx.measureText(rt).width;
-        g.fillText(rt, W - PAD - rw, y);
+        // 分类胶囊：页脚行右端
+        if (hasCat) {
+          var cx = W - PAD - catBW;
+          var cy = y - catBH / 2 - 2 * S;
+          g.strokeStyle = ACCENT; g.lineWidth = 1.6;
+          roundRect(g, cx, cy, catBW, catBH, catBH / 2); g.stroke();
+          g.fillStyle = ACCENT;
+          g.font = '500 ' + Math.round(catFontPx - 1) + 'px ' + F_SANS;
+          g.textBaseline = 'middle';
+          g.fillText(item.category, cx + 20 * S, cy + catBH / 2 + 1 * S);
+          g.textBaseline = 'alphabetic';
+        }
       }
       y += 24 * S;
 
