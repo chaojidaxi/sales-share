@@ -303,13 +303,67 @@ body::before {
 
 /* ===== 卡片保存弹层 ===== */
 .card-modal { position: fixed; inset: 0; z-index: 9999; display: none; }
-.card-modal.show { display: block; }
+.card-modal.show { display: block; animation: cmFadeIn .25s ease; }
+@keyframes cmFadeIn { from { opacity: 0; } to { opacity: 1; } }
 .cm-mask { position: absolute; inset: 0; background: rgba(20,18,15,0.6); backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px); }
 .cm-box { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; }
-.cm-img { max-width: 94%; max-height: 76vh; border-radius: 14px; box-shadow: 0 24px 70px rgba(0,0,0,0.45); background: #fff; }
-.cm-tip { color: #fff; font-size: 14px; margin-top: 18px; letter-spacing: 2px; }
-.cm-close { margin-top: 12px; border: 1px solid rgba(255,255,255,0.5); color: #fff; background: transparent; border-radius: 100px; padding: 8px 30px; font-size: 14px; cursor: pointer; transition: all 0.2s; }
-.cm-close:hover { background: rgba(255,255,255,0.15); }
+.cm-img {
+  max-width: 94%; max-height: 70vh; border-radius: 14px;
+  box-shadow: 0 24px 70px rgba(0,0,0,0.45); background: #fff;
+  animation: cmImgIn .35s cubic-bezier(0.16,1,0.3,1);
+}
+@keyframes cmImgIn {
+  from { opacity: 0; transform: translateY(14px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.cm-loader {
+  display: flex; flex-direction: column; align-items: center; gap: 16px;
+  color: rgba(255,255,255,0.9);
+}
+.cm-spinner {
+  width: 44px; height: 44px; border-radius: 50%;
+  border: 3px solid rgba(255,255,255,0.22);
+  border-top-color: var(--accent);
+  animation: cmSpin .8s linear infinite;
+}
+@keyframes cmSpin { to { transform: rotate(360deg); } }
+.cm-loader-text { font-size: 13px; letter-spacing: 2px; opacity: 0.85; }
+.cm-tip {
+  color: #fff; font-size: 13px; margin-top: 16px; letter-spacing: 1.5px;
+  text-align: center; opacity: 0.85; line-height: 1.7;
+}
+.cm-tip small { display: block; font-size: 11px; opacity: 0.6; margin-top: 4px; letter-spacing: 1px; }
+.cm-actions {
+  display: flex; gap: 10px; margin-top: 16px; align-items: center;
+}
+.cm-actions button {
+  border: 1px solid rgba(255,255,255,0.5); color: #fff; background: transparent;
+  border-radius: 100px; padding: 9px 22px; font-size: 13px; cursor: pointer;
+  transition: all 0.2s;
+}
+.cm-actions button:hover { background: rgba(255,255,255,0.15); }
+.cm-actions button.primary {
+  background: var(--accent); border-color: var(--accent);
+  box-shadow: 0 4px 14px rgba(224,85,69,0.3);
+}
+.cm-actions button.primary:hover { background: var(--accent-deep); border-color: var(--accent-deep); }
+@media (max-width: 560px) {
+  /* 手机端隐藏桌面专用按钮 */
+  .cm-actions .cm-download { display: none; }
+  .cm-tip { font-size: 12px; }
+  .cm-img { max-height: 64vh; }
+}
+
+/* 按钮 loading 态 */
+.copy-btn {
+  position: relative;
+}
+.copy-btn.loading { pointer-events: none; background: var(--accent-deep); }
+.copy-btn.loading::before {
+  width: 16px; height: 16px;
+  animation: cmSpin 0.8s linear infinite;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21 12a9 9 0 1 1-6.219-8.56'/%3E%3C/svg%3E") center/contain no-repeat;
+}
 </style>
 </head>
 <body>
@@ -523,10 +577,16 @@ document.getElementById('content').addEventListener('click', function(e) {
   }
 
   // 未分享 → 生成图片并自动标记
+  btn.classList.add('loading');
   btn.textContent = '生成中…';
-  setTimeout(function() {
+  // 立即开模态框带 spinner（无延迟）
+  showCardModalLoading();
+  // 用 rAF 异步触发 canvas 生成，避免阻塞主线程
+  requestAnimationFrame(function() {
     try {
       generateCardImage(item, function(dataUrl) {
+        // 渲染完成：复位按钮 + 标记已分享 + 替换模态框内容
+        btn.classList.remove('loading');
         markShared(item, true);
         var article = btn.closest('.article');
         btn.classList.add('is-shared');
@@ -540,13 +600,87 @@ document.getElementById('content').addEventListener('click', function(e) {
             article.insertBefore(b, article.firstChild);
           }
         }
-        showCardModal(dataUrl, item.title);
+        showCardModalImage(dataUrl, item.title);
       });
     } catch (err) {
+      btn.classList.remove('loading');
       btn.textContent = '保存卡片';
+      hideCardModal();
+      alert('生成失败，请重试');
     }
-  }, 30);
+  });
 });
+
+function ensureCardModal() {
+  var modal = document.getElementById('cardModal');
+  if (modal) return modal;
+  modal = document.createElement('div');
+  modal.id = 'cardModal';
+  modal.className = 'card-modal';
+  modal.innerHTML =
+    '<div class="cm-mask"></div>' +
+    '<div class="cm-box">' +
+      '<div class="cm-loader">' +
+        '<div class="cm-spinner"></div>' +
+        '<div class="cm-loader-text">正在生成卡片</div>' +
+      '</div>' +
+      '<img class="cm-img" alt="分享卡片" style="display:none">' +
+      '<div class="cm-tip" style="display:none">长按图片保存到相册<small>iOS / Android 通用</small></div>' +
+      '<div class="cm-actions" style="display:none">' +
+        '<button class="cm-download primary">下载图片</button>' +
+        '<button class="cm-close">关闭</button>' +
+      '</div>' +
+    '</div>';
+  document.body.appendChild(modal);
+  modal.querySelector('.cm-mask').addEventListener('click', function() { modal.classList.remove('show'); document.body.style.overflow=''; });
+  modal.querySelector('.cm-close').addEventListener('click', function() { modal.classList.remove('show'); document.body.style.overflow=''; });
+  return modal;
+}
+
+function showCardModalLoading() {
+  var modal = ensureCardModal();
+  // 重置为 loading 态
+  modal.querySelector('.cm-loader').style.display = '';
+  modal.querySelector('.cm-img').style.display = 'none';
+  modal.querySelector('.cm-img').src = '';
+  modal.querySelector('.cm-tip').style.display = 'none';
+  modal.querySelector('.cm-actions').style.display = 'none';
+  modal.classList.add('show');
+  document.body.style.overflow = 'hidden';
+}
+
+function showCardModalImage(dataUrl, title) {
+  var modal = ensureCardModal();
+  var img = modal.querySelector('.cm-img');
+  modal.querySelector('.cm-loader').style.display = 'none';
+  img.style.display = '';
+  // 重启动画
+  img.style.animation = 'none';
+  void img.offsetWidth;
+  img.style.animation = '';
+  img.src = dataUrl;
+  modal.querySelector('.cm-tip').style.display = '';
+  modal.querySelector('.cm-actions').style.display = '';
+  // 桌面端下载按钮
+  var dl = modal.querySelector('.cm-download');
+  dl.onclick = function() {
+    var a = document.createElement('a');
+    a.href = dataUrl; a.download = (title || '销售成长分享') + '.png';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  };
+}
+
+function hideCardModal() {
+  var modal = document.getElementById('cardModal');
+  if (modal) modal.classList.remove('show');
+  document.body.style.overflow = '';
+}
+
+// 兼容老接口
+function showCardModal(dataUrl, title) {
+  showCardModalLoading();
+  showCardModalImage(dataUrl, title);
+}
 
 var F_SERIF = "'Noto Serif SC', Georgia, 'Songti SC', 'SimSun', serif";
 var F_SANS = "-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Hiragino Sans GB', sans-serif";
@@ -989,25 +1123,14 @@ function generateCardImage(item, callback) {
   img.src = 'logo.png';
 }
 
-function showCardModal(dataUrl, title) {
-  var modal = document.getElementById('cardModal');
-  if (!modal) {
-    modal = document.createElement('div');
-    modal.id = 'cardModal';
-    modal.className = 'card-modal';
-    modal.innerHTML = '<div class="cm-mask"></div><div class="cm-box"><img class="cm-img" alt="分享卡片"><div class="cm-tip">长按图片保存到相册</div><button class="cm-close">关闭</button></div>';
-    document.body.appendChild(modal);
-    modal.querySelector('.cm-mask').addEventListener('click', function() { modal.classList.remove('show'); });
-    modal.querySelector('.cm-close').addEventListener('click', function() { modal.classList.remove('show'); });
-  }
-  modal.querySelector('.cm-img').src = dataUrl;
-  modal.classList.add('show');
-  var a = document.createElement('a');
-  a.href = dataUrl; a.download = (title || '销售成长分享') + '.png';
-  document.body.appendChild(a); a.click(); document.body.removeChild(a);
-}
+// 兼容老逻辑（其他地方可能还调 showCardModal）
+showCardModal = function(dataUrl, title) {
+  showCardModalLoading();
+  showCardModalImage(dataUrl, title);
+};
 
 fetchData();
+</script>
 </script>
 </body>
 </html>
