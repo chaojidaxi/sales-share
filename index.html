@@ -180,6 +180,28 @@ body::before {
 .copy-btn.done { background: var(--accent-deep); }
 .copy-btn.done::before { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6L9 17l-5-5'/%3E%3C/svg%3E"); }
 
+/* ===== 已分享徽章 + 按钮已分享态 ===== */
+.article { position: relative; }
+.shared-badge {
+  position: absolute; top: 18px; right: 22px; z-index: 2;
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 5px 11px 5px 9px;
+  background: #f0f7f1; color: #2c8a4a;
+  border: 1px solid #c8e3cf; border-radius: 100px;
+  font-size: 11px; font-weight: 700; letter-spacing: 1px;
+  box-shadow: 0 2px 6px rgba(44,138,74,0.10);
+  pointer-events: none;
+}
+.shared-badge::before {
+  content: ""; width: 11px; height: 11px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232c8a4a' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6L9 17l-5-5'/%3E%3C/svg%3E") center/contain no-repeat;
+}
+.copy-btn.is-shared {
+  background: #2c8a4a; box-shadow: 0 4px 14px rgba(44,138,74,0.24);
+}
+.copy-btn.is-shared::before { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6L9 17l-5-5'/%3E%3C/svg%3E"); }
+.copy-btn.is-shared:hover { background: #247438; box-shadow: 0 6px 18px rgba(44,138,74,0.30); }
+
 /* 段落标签 */
 .k {
   display: inline-block;
@@ -387,12 +409,36 @@ function esc(s) {
   });
 }
 
+// ===== 已分享记忆（localStorage）=====
+var SHARED_KEY = 'sales-share:shared';
+function sharedMap() {
+  try { return JSON.parse(localStorage.getItem(SHARED_KEY) || '{}'); }
+  catch (e) { return {}; }
+}
+function writeSharedMap(m) { try { localStorage.setItem(SHARED_KEY, JSON.stringify(m)); } catch (e) {} }
+function sharedKey(item) { return (item.date || '') + '||' + (item.title || ''); }
+function isShared(item) { var m = sharedMap(); return !!m[sharedKey(item)]; }
+function markShared(item, on) {
+  var m = sharedMap();
+  var k = sharedKey(item);
+  if (on) m[k] = Date.now(); else delete m[k];
+  writeSharedMap(m);
+}
+
 function renderCard(item) {
   var methodsHtml = item.methods && item.methods.length
     ? '<ol>' + item.methods.map(function(m) { return '<li>' + esc(m) + '</li>'; }).join('') + '</ol>'
     : '';
 
-  return '<article class="article">' +
+  var shared = isShared(item);
+  var articleClass = 'article' + (shared ? ' is-shared' : '');
+  var badgeHtml = shared ? '<span class="shared-badge">已分享</span>' : '';
+  var btnText = shared ? '已分享' : '保存卡片';
+  var btnClass = 'copy-btn' + (shared ? ' is-shared' : '');
+  var dataKey = esc(sharedKey(item));
+
+  return '<article class="' + articleClass + '" data-key="' + dataKey + '">' +
+    badgeHtml +
     '<div class="meta-line">' +
       '<span class="tag">' + esc(item.category) + '</span>' +
       '<span class="dot"></span>' +
@@ -406,7 +452,7 @@ function renderCard(item) {
     (item.action ? '<div class="action"><span class="k">今日行动</span>' + esc(item.action) + '</div>' : '') +
     (item.review ? '<p class="review"><span class="k">今日复盘</span>' + esc(item.review) + '</p>' : '') +
     '<div class="foot-rule"></div>' +
-    '<button class="copy-btn" data-idx="' + item.__idx + '">保存卡片</button>' +
+    '<button class="' + btnClass + '" data-idx="' + item.__idx + '">' + btnText + '</button>' +
     '</article>';
 }
 
@@ -446,11 +492,39 @@ document.getElementById('content').addEventListener('click', function(e) {
   var idx = parseInt(btn.getAttribute('data-idx'), 10);
   var item = ALL[idx];
   if (!item) return;
+
+  // 已分享态 → 再点取消
+  if (btn.classList.contains('is-shared')) {
+    markShared(item, false);
+    var article = btn.closest('.article');
+    btn.classList.remove('is-shared');
+    btn.textContent = '保存卡片';
+    if (article) {
+      article.classList.remove('is-shared');
+      var badge = article.querySelector('.shared-badge');
+      if (badge) badge.parentNode.removeChild(badge);
+    }
+    return;
+  }
+
+  // 未分享 → 生成图片并自动标记
   btn.textContent = '生成中…';
   setTimeout(function() {
     try {
       generateCardImage(item, function(dataUrl) {
-        btn.textContent = '保存卡片';
+        markShared(item, true);
+        var article = btn.closest('.article');
+        btn.classList.add('is-shared');
+        btn.textContent = '已分享';
+        if (article) {
+          article.classList.add('is-shared');
+          if (!article.querySelector('.shared-badge')) {
+            var b = document.createElement('span');
+            b.className = 'shared-badge';
+            b.textContent = '已分享';
+            article.insertBefore(b, article.firstChild);
+          }
+        }
         showCardModal(dataUrl, item.title);
       });
     } catch (err) {
