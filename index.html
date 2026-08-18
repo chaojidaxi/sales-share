@@ -96,21 +96,18 @@ body::before {
 
 /* ===== 分类筛选 ===== */
 .controls-row {
-  display: flex; gap: 10px; align-items: center; flex-wrap: nowrap; justify-content: center;
+  display: flex; gap: 10px; align-items: flex-start; flex-wrap: wrap; justify-content: center;
   max-width: 660px; margin: 0 auto;
 }
 .row-label { font-size: 10px; color: var(--ink-3); font-weight: 600; letter-spacing: 2px; flex: 0 0 auto; }
-.chips { flex: 1 1 auto; min-width: 0; }
+.chips { flex: 1 1 100%; min-width: 0; }
 
 .chips {
-  display: flex; gap: 8px; flex-wrap: nowrap; overflow-x: auto;
-  justify-content: flex-start; align-items: center;
+  display: flex; gap: 8px; flex-wrap: wrap; overflow: visible;
+  justify-content: center; align-items: center;
   max-width: 100%;
   padding: 2px 2px 6px;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
 }
-.chips::-webkit-scrollbar { display: none; }
 .chips > .chip { flex: 0 0 auto; white-space: nowrap; }
 .chip {
   position: relative;
