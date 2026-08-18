@@ -85,8 +85,8 @@ body::before {
 }
 .head-title-block { flex: 0 0 auto; text-align: left; }
 .head-title-block .brand-title {
-  font-family: 'Noto Sans SC', 'PingFang SC', 'Hiragino Sans GB', -apple-system, sans-serif;
-  font-size: 26px; font-weight: 600; letter-spacing: 0; line-height: 1.2;
+  font-family: 'Noto Serif SC', 'Songti SC', 'STSong', 'SimSun', serif;
+  font-size: 32px; font-weight: 600; letter-spacing: 0; line-height: 1.1;
   color: var(--ink);
 }
 .site-head .subtitle {
@@ -682,9 +682,7 @@ function showCardModal(dataUrl, title) {
 }
 
 var F_SERIF = '"Noto Serif SC", "Songti SC", "STSong", "SimSun", serif';
-var F_SANS = '"Noto Sans SC", "PingFang SC", "Hiragino Sans GB", -apple-system, sans-serif';
-// 主字体（苹果风统一无衬线）
-var F_DISPLAY = '"Noto Sans SC", "PingFang SC", "Hiragino Sans GB", -apple-system, BlinkMacSystemFont, sans-serif';
+var F_SANS = '"Noto Sans SC", -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", sans-serif';
 
 function wrapText(ctx, text, maxWidth) {
   var chars = String(text).split('');
@@ -862,14 +860,14 @@ function generateCardImage(item, callback) {
     else if (sc > 70)  S = 1.10;
     else               S = 1.18;
 
-    // 字号底座（S=1 时）—— 苹果风：大留白、清晰层级
-    var F_TITLE = 56, LH_TITLE = 78;      // 大标题（黑体 700，主角）
-    var F_QUOTE = 32, LH_QUOTE = 52;      // 金句(认知)
-    var F_BODY  = 26, LH_BODY  = 44;      // 正文（更大更舒展）
-    var F_LABEL = 16, LH_LABEL = 24;      // 小标签
-    var F_BRAND = 44;                     // 品牌名（克制，不再压标题）
-    var F_FOOT  = 17;                     // 页脚
-    var F_NUM   = 21;                     // 方法编号
+    // 字号底座（S=1 时）—— 主题主导：品牌名=主题最大，标题=次要自然
+    var F_TITLE = 38, LH_TITLE = 56;      // 大标题（次要，自然黑体）
+    var F_QUOTE = 29, LH_QUOTE = 48;      // 金句(认知)
+    var F_BODY  = 24, LH_BODY  = 40;      // 正文
+    var F_LABEL = 15, LH_LABEL = 22;      // 小标签
+    var F_BRAND = 62;                     // 品牌名（主题，最大）
+    var F_FOOT  = 16;                     // 页脚
+    var F_NUM   = 19;                     // 方法编号
 
     // 计算某字体下文本的行数
     function countLines(font, text, width) {
@@ -893,58 +891,50 @@ function generateCardImage(item, callback) {
       var LINE_C = '#ececec';        // 分隔线
       var EX_BG = '#f6f5f4';         // 举例块底
 
-      // --- 苹果风顶部：左logo + 品牌名  |  右上胶囊 ---
-      var logoD = 108 * S;             // logo 边长（克制）
-      var brandFont = '600 ' + Math.round(F_BRAND * S) + 'px ' + F_DISPLAY;
+      // --- 顶部三段：左方形logo + 细竖分隔 + 品牌名  |  右上分类胶囊 ---
+      var logoD = 120 * S;             // 方形 logo 边长（不裁切，保留完整得米字样）
+      var brandFont = '600 ' + Math.round(F_BRAND * S) + 'px ' + F_SERIF;
       ctx.font = brandFont;
       var brandTextW = ctx.measureText('每日销售成长分享').width;
 
-      // 分类胶囊（量尺寸）- 顶部右上角，明显
+      // 分类胶囊（量尺寸）
       var hasCat = !!item.category;
-      var catBW = 0, catBH = 44 * S, catFontPx = 18 * S;
+      var catBW = 0, catBH = 40 * S, catFontPx = 17 * S;
       if (hasCat) {
-        ctx.font = '600 ' + Math.round(catFontPx) + 'px ' + F_DISPLAY;
+        ctx.font = '600 ' + Math.round(catFontPx) + 'px ' + F_SANS;
         var catTextW = ctx.measureText(item.category).width;
-        catBW = catTextW + 44 * S;
+        catBW = catTextW + 40 * S;
       }
 
-      var topH = Math.max(logoD, F_BRAND * S + 12 * S);
-      y += 30 * S + topH;
+      // 顶部行高：logo + 品牌名（不要英文副标），更紧凑
+      var topH = logoD;
+      y += 24 * S + topH;
       if (draw) {
-        var topY = y - topH;
-        // logo：方形完整显示
+        var topY = y - topH;            // 顶部内容起点
+        // logo：方形完整显示（不 clip）
         if (hasLogo) {
-          g.drawImage(logoImg, PAD, topY + (topH - logoD) / 2, logoD, logoD);
+          g.drawImage(logoImg, PAD, topY, logoD, logoD);
         }
-        // 品牌名：logo 右侧，垂直居中（思源黑体 600）
-        var nameX = PAD + logoD + 20 * S;
-        g.font = brandFont;
+        // 竖分隔线：logo 右侧
+        var ruleX = PAD + logoD + 18 * S;
+        g.fillStyle = LINE_C;
+        g.fillRect(ruleX, topY + 16 * S, 1, topH - 32 * S);
+        // 品牌名（主题，最大）：衬线 + 中粗 600 + 紧凑字距
+        g.font = '600 ' + Math.round(F_BRAND * S) + 'px "Noto Serif SC", "STSong", "SimSun", serif';
         g.fillStyle = INK;
         g.textBaseline = 'middle';
         var nameCY = topY + topH / 2;
-        g.fillText('每日销售成长分享', nameX, nameCY);
+        g.fillText('每日销售成长分享', ruleX + 18 * S, nameCY);
         g.textBaseline = 'alphabetic';
 
-        // 分类胶囊：右上角（明显）
-        if (hasCat) {
-          var cx = W - PAD - catBW;
-          var cy = nameCY - catBH / 2;
-          g.strokeStyle = ACCENT; g.lineWidth = 2;
-          roundRect(g, cx, cy, catBW, catBH, catBH / 2); g.stroke();
-          g.fillStyle = ACCENT;
-          g.font = '600 ' + Math.round(catFontPx) + 'px ' + F_DISPLAY;
-          g.textBaseline = 'middle';
-          g.fillText(item.category, cx + 22 * S, cy + catBH / 2 + 1 * S);
-          g.textBaseline = 'alphabetic';
-        }
-        // 顶部留白更大（苹果风）
+        drawRule(g, PAD, maxW, y + 22 * S, LINE_C);
       }
-      y += 36 * S + 14 * S;
+      y += 22 * S + 30 * S;
 
 
 
-      // --- 标题（主角，黑体 700，大留白）---
-      var tFont = '700 ' + Math.round(F_TITLE * S) + 'px ' + F_DISPLAY;
+      // --- 标题（次要，自然黑体）---
+      var tFont = '500 ' + Math.round(F_TITLE * S) + 'px "Noto Sans SC", "PingFang SC", "Hiragino Sans GB", sans-serif';
       var tLinesArr = (function() { ctx.font = tFont; return wrapText(ctx, item.title, maxW); })();
       // 孤字平衡：末行 ≤2 字时收窄宽度重排，避免单字独占一行
       if (tLinesArr.length > 1 && tLinesArr[tLinesArr.length - 1].length <= 2) {
@@ -957,7 +947,10 @@ function generateCardImage(item, callback) {
         var ty = y + F_TITLE * S;
         tLinesArr.forEach(function(ln) { g.fillText(ln, PAD, ty); ty += LH_TITLE * S; });
       }
-      y += (tLinesArr.length - 1) * LH_TITLE * S + F_TITLE * S + 36 * S;
+      y += (tLinesArr.length - 1) * LH_TITLE * S + F_TITLE * S + 18 * S;
+      // 标题下主色短粗线（力量感）
+      if (draw) { g.fillStyle = ACCENT; roundRect(g, PAD + 2, y, 62 * S, 6 * S, 3 * S); g.fill(); }
+      y += 6 * S + 32 * S;
 
       // --- 关键认知：浅珊瑚金句卡（左竖条+浅底，深色衬线大字）---
       if (item.insight) {
@@ -1075,13 +1068,25 @@ function generateCardImage(item, callback) {
         y += countLines('400 ' + (F_BODY * S) + 'px ' + F_SANS, item.review, maxW) * LH_BODY * S + 30 * S;
       }
 
-      // --- 底部页脚：苹果风极简 - 细线 + 左品牌口号 ---
+      // --- 底部页脚：细线 + 左品牌口号 / 右分类胶囊（替代"每日更新"）---
       if (draw) drawRule(g, PAD, maxW, y, LINE_C);
       y += 30 * S;
       if (draw) {
-        g.font = '500 ' + Math.round(F_FOOT * S) + 'px ' + F_DISPLAY;
+        g.font = '500 ' + Math.round(F_FOOT * S) + 'px ' + F_SANS;
         g.fillStyle = FAINT;
         g.fillText('每日销售成长 · 一线实战', PAD, y);
+        // 分类胶囊：页脚行右端
+        if (hasCat) {
+          var cx = W - PAD - catBW;
+          var cy = y - catBH / 2 - 2 * S;
+          g.strokeStyle = ACCENT; g.lineWidth = 1.6;
+          roundRect(g, cx, cy, catBW, catBH, catBH / 2); g.stroke();
+          g.fillStyle = ACCENT;
+          g.font = '500 ' + Math.round(catFontPx - 1) + 'px ' + F_SANS;
+          g.textBaseline = 'middle';
+          g.fillText(item.category, cx + 20 * S, cy + catBH / 2 + 1 * S);
+          g.textBaseline = 'alphabetic';
+        }
       }
       y += 24 * S;
 
