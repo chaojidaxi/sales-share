@@ -646,7 +646,7 @@ function generateCardImage(item, callback) {
     var F_QUOTE = 29, LH_QUOTE = 48;      // 金句(认知)
     var F_BODY  = 24, LH_BODY  = 40;      // 正文
     var F_LABEL = 15, LH_LABEL = 22;      // 小标签
-    var F_BRAND = 28;                     // 品牌（与放大logo匹配）
+    var F_BRAND = 40;                     // 品牌（与放大logo匹配）
     var F_FOOT  = 16;                     // 页脚
     var F_NUM   = 19;                     // 方法编号
 
@@ -672,10 +672,22 @@ function generateCardImage(item, callback) {
       var LINE_C = '#ececec';        // 分隔线
       var EX_BG = '#f6f5f4';         // 举例块底
 
-      // --- 顶部：圆形logo(尽量大) + 品牌名，垂直居中对齐，细线收尾（不写日期）---
-      var logoR = 44 * S;             // logo 半径（最大化）
+      // --- 顶部：左logo+品牌名（放大），右分类胶囊（同行右上角）---
+      var logoR = 60 * S;             // logo 半径（最大化）
       var logoD = logoR * 2;          // logo 直径
       var brandFont = '600 ' + Math.round(F_BRAND * S) + 'px ' + F_SERIF;
+      ctx.font = brandFont;
+      var brandTextW = ctx.measureText('每日销售成长分享').width;
+
+      // 分类胶囊（量尺寸）
+      var hasCat = !!item.category;
+      var catBW = 0, catBH = 38 * S, catFontPx = 16 * S, catTextW = 0;
+      if (hasCat) {
+        ctx.font = '600 ' + Math.round(catFontPx) + 'px ' + F_SANS;
+        catTextW = ctx.measureText(item.category).width;
+        catBW = catTextW + 38 * S;
+      }
+
       y += 14 * S + logoR;            // y 对齐到 logo 垂直中心
       if (draw) {
         var logoCY = y;               // logo 圆心 y
@@ -691,24 +703,21 @@ function generateCardImage(item, callback) {
         g.textBaseline = 'middle';
         g.fillText('每日销售成长分享', PAD + logoD + 22 * S, logoCY);
         g.textBaseline = 'alphabetic';
+
+        // 分类胶囊：右上角，与 logo 垂直居中
+        if (hasCat) {
+          var cx = W - PAD - catBW;
+          var cy = logoCY - catBH / 2;
+          g.strokeStyle = ACCENT; g.lineWidth = 1.6;
+          roundRect(g, cx, cy, catBW, catBH, catBH / 2); g.stroke();
+          g.fillStyle = ACCENT;
+          g.font = '600 ' + Math.round(catFontPx) + 'px ' + F_SANS;
+          g.fillText(item.category, cx + 19 * S, cy + 25 * S);
+        }
+
         drawRule(g, PAD, maxW, y + logoR + 24 * S, LINE_C);
       }
       y += logoR + 24 * S + 34 * S;
-
-      // --- 分类胶囊（珊瑚红描边，左对齐，小巧）---
-      if (item.category) {
-        ctx.font = '600 ' + Math.round(16 * S) + 'px ' + F_SANS;
-        var cw2 = ctx.measureText(item.category).width;
-        var bw = cw2 + 38 * S, bh = 38 * S;
-        if (draw) {
-          g.strokeStyle = ACCENT; g.lineWidth = 1.6;
-          roundRect(g, PAD, y, bw, bh, bh / 2); g.stroke();
-          g.fillStyle = ACCENT;
-          g.font = '600 ' + Math.round(16 * S) + 'px ' + F_SANS;
-          g.fillText(item.category, PAD + 19 * S, y + 25 * S);
-        }
-        y += bh + 30 * S;
-      }
 
       // --- 标题（左对齐深黑大粗体，绝对主角）---
       var tFont = '700 ' + Math.round(F_TITLE * S) + 'px ' + F_SERIF;
