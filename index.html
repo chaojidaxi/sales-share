@@ -81,12 +81,8 @@ body::before {
 .head-title-block { flex: 0 0 auto; text-align: left; }
 .head-title-block .brand-title {
   font-family: 'Noto Serif SC', Georgia, 'Songti SC', 'STSong', serif;
-  font-size: 30px; font-weight: 600; letter-spacing: 2px; line-height: 1.1;
+  font-size: 30px; font-weight: 600; letter-spacing: 1.5px; line-height: 1.1;
   color: var(--ink);
-}
-.head-title-block .brand-eyebrow {
-  margin-top: 7px; font-size: 10px; font-weight: 600;
-  letter-spacing: 3.5px; color: var(--gold); opacity: 0.85;
 }
 .site-head .subtitle {
   text-align: center;
@@ -290,8 +286,7 @@ body::before {
   .head-mast { margin-bottom: 14px; }
   .head-logo { width: 50px; height: 50px; border-radius: 12px; }
   .head-divider { height: 34px; margin: 0 14px; }
-  .head-title-block .brand-title { font-size: 23px; letter-spacing: 1.5px; }
-  .head-title-block .brand-eyebrow { font-size: 9px; letter-spacing: 2.5px; margin-top: 5px; }
+  .head-title-block .brand-title { font-size: 23px; letter-spacing: 1px; }
   .site-head .subtitle { font-size: 12px; margin-bottom: 14px; }
   .controls-row .row-label { display: none; }
   .article { padding: 30px 24px; border-radius: 14px; }
@@ -374,7 +369,6 @@ body::before {
     <div class="head-divider"></div>
     <div class="head-title-block">
       <h1 class="brand-title">每日销售成长分享</h1>
-      <div class="brand-eyebrow">DAILY SALES PLAYBOOK</div>
     </div>
   </div>
   <div class="subtitle">不灌鸡汤，只给能落地的认知 · 共 <strong id="stat-total">0</strong> 篇</div>
@@ -907,34 +901,31 @@ function generateCardImage(item, callback) {
         catBW = catTextW + 40 * S;
       }
 
-      // 顶部行高：容纳 logo + 品牌名(上) + 小英文副标(下) 三层不重叠
-      var topH = logoD + 24 * S;
-      y += 22 * S + topH;
+      // 顶部行高：logo + 品牌名（不要英文副标），更紧凑
+      var topH = logoD;
+      y += 24 * S + topH;
       if (draw) {
         var topY = y - topH;            // 顶部内容起点
-        // logo：方形完整显示（不 clip），与文字上下居中
+        // logo：方形完整显示（不 clip）
         if (hasLogo) {
           g.drawImage(logoImg, PAD, topY, logoD, logoD);
         }
         // 竖分隔线：logo 右侧
-        var ruleX = PAD + logoD + 20 * S;
+        var ruleX = PAD + logoD + 18 * S;
         g.fillStyle = LINE_C;
-        g.fillRect(ruleX, topY + 14 * S, 1, topH - 28 * S);
-        // 品牌名：竖线右侧，垂直居中偏上
+        g.fillRect(ruleX, topY + 16 * S, 1, topH - 32 * S);
+        // 品牌名：竖线右侧，垂直居中
         g.font = brandFont;
         g.fillStyle = INK;
+        g.textBaseline = 'middle';
+        var nameCY = topY + topH / 2;
+        g.fillText('每日销售成长分享', ruleX + 18 * S, nameCY);
         g.textBaseline = 'alphabetic';
-        var nameY = topY + topH / 2 - 2 * S;
-        g.fillText('每日销售成长分享', ruleX + 20 * S, nameY);
-        // 品牌名下小英文副标（贴底部留 14px）
-        g.font = '500 ' + Math.round(11 * S) + 'px ' + F_SANS;
-        g.fillStyle = FAINT;
-        g.fillText('DAILY  SALES  PLAYBOOK', ruleX + 20 * S, topY + topH - 16 * S);
 
         // 分类胶囊：右上角，与品牌名垂直居中
         if (hasCat) {
           var cx = W - PAD - catBW;
-          var cy = nameY - 22 * S;  // 跟品牌名基线对齐
+          var cy = nameCY - catBH / 2;
           g.strokeStyle = ACCENT; g.lineWidth = 1.8;
           roundRect(g, cx, cy, catBW, catBH, catBH / 2); g.stroke();
           g.fillStyle = ACCENT;
@@ -944,9 +935,10 @@ function generateCardImage(item, callback) {
           g.textBaseline = 'alphabetic';
         }
 
-        drawRule(g, PAD, maxW, y + 26 * S, LINE_C);
+        drawRule(g, PAD, maxW, y + 22 * S, LINE_C);
       }
-      y += 26 * S + 30 * S;
+      y += 22 * S + 30 * S;
+
 
       // --- 标题（左对齐深黑大粗体，绝对主角）---
       var tFont = '700 ' + Math.round(F_TITLE * S) + 'px ' + F_SERIF;
@@ -991,23 +983,21 @@ function generateCardImage(item, callback) {
         if (draw) {
           g.font = '600 ' + Math.round(14 * S) + 'px ' + F_SANS;
           g.fillStyle = FAINT;
-          drawSpacedText(g, '场 景', PAD, y, 2);
+          g.fillText('真实场景', PAD, y);
         }
         y += LH_LABEL * S + 6 * S;
         if (draw) drawParagraph(g, item.scene, SUB, PAD, maxW, y, F_BODY * S, LH_BODY * S);
         y += countLines('400 ' + (F_BODY * S) + 'px ' + F_SANS, item.scene, maxW) * LH_BODY * S + 24 * S;
       }
 
-      // --- 落地方法（主色编号方块 + 深色文字）---
+      // --- 落地方法（标签统一灰色小字 + 主色编号方块 + 深色文字）---
       if (item.methods && item.methods.length) {
         if (draw) {
-          g.font = '700 ' + Math.round(17 * S) + 'px ' + F_SANS;
-          g.fillStyle = INK;
-          g.fillText('落地方法', PAD + 18 * S, y + 4 * S);
-          g.fillStyle = ACCENT;
-          roundRect(g, PAD, y - 10 * S, 8 * S, 8 * S, 2 * S); g.fill();
+          g.font = '600 ' + Math.round(14 * S) + 'px ' + F_SANS;
+          g.fillStyle = FAINT;
+          g.fillText('落地方法', PAD, y);
         }
-        y += LH_LABEL * S + 18 * S;
+        y += LH_LABEL * S + 14 * S;
         item.methods.forEach(function(m, i) {
           var num = (i < 9 ? '0' : '') + (i + 1);
           var mLines = countLines('400 ' + (F_BODY * S) + 'px ' + F_SANS, m, maxW - 66 * S);
@@ -1078,7 +1068,7 @@ function generateCardImage(item, callback) {
         if (draw) {
           g.font = '600 ' + Math.round(14 * S) + 'px ' + F_SANS;
           g.fillStyle = FAINT;
-          drawSpacedText(g, '复 盘', PAD, y, 2);
+          g.fillText('今日复盘', PAD, y);
         }
         y += LH_LABEL * S + 6 * S;
         if (draw) drawParagraph(g, item.review, SUB, PAD, maxW, y, F_BODY * S, LH_BODY * S);
