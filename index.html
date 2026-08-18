@@ -927,6 +927,19 @@ function generateCardImage(item, callback) {
         g.fillText('每日销售成长分享', ruleX + 18 * S, nameCY);
         g.textBaseline = 'alphabetic';
 
+        // 分类胶囊：右上角（与品牌名同行）
+        if (hasCat) {
+          var cx = W - PAD - catBW;
+          var cy = nameCY - catBH / 2;
+          g.strokeStyle = ACCENT; g.lineWidth = 1.8;
+          roundRect(g, cx, cy, catBW, catBH, catBH / 2); g.stroke();
+          g.fillStyle = ACCENT;
+          g.font = '600 ' + Math.round(catFontPx) + 'px ' + F_SANS;
+          g.textBaseline = 'middle';
+          g.fillText(item.category, cx + 20 * S, cy + catBH / 2 + 1 * S);
+          g.textBaseline = 'alphabetic';
+        }
+
         drawRule(g, PAD, maxW, y + 22 * S, LINE_C);
       }
       y += 22 * S + 30 * S;
@@ -1075,18 +1088,6 @@ function generateCardImage(item, callback) {
         g.font = '500 ' + Math.round(F_FOOT * S) + 'px ' + F_SANS;
         g.fillStyle = FAINT;
         g.fillText('每日销售成长 · 一线实战', PAD, y);
-        // 分类胶囊：页脚行右端
-        if (hasCat) {
-          var cx = W - PAD - catBW;
-          var cy = y - catBH / 2 - 2 * S;
-          g.strokeStyle = ACCENT; g.lineWidth = 1.6;
-          roundRect(g, cx, cy, catBW, catBH, catBH / 2); g.stroke();
-          g.fillStyle = ACCENT;
-          g.font = '500 ' + Math.round(catFontPx - 1) + 'px ' + F_SANS;
-          g.textBaseline = 'middle';
-          g.fillText(item.category, cx + 20 * S, cy + catBH / 2 + 1 * S);
-          g.textBaseline = 'alphabetic';
-        }
       }
       y += 24 * S;
 
