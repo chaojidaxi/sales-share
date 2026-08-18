@@ -743,52 +743,58 @@ function generateCardImage(item, callback) {
       var LINE_C = '#ececec';        // 分隔线
       var EX_BG = '#f6f5f4';         // 举例块底
 
-      // --- 顶部：左logo+品牌名（放大），右分类胶囊（同行右上角）---
-      var logoR = 72 * S;             // logo 半径（最大化）
-      var logoD = logoR * 2;          // logo 直径
+      // --- 顶部三段：左方形logo + 细竖分隔 + 品牌名  |  右上分类胶囊 ---
+      var logoD = 108 * S;             // 方形 logo 边长（不裁切，保留完整得米字样）
       var brandFont = '600 ' + Math.round(F_BRAND * S) + 'px ' + F_SERIF;
       ctx.font = brandFont;
       var brandTextW = ctx.measureText('每日销售成长分享').width;
 
       // 分类胶囊（量尺寸）
       var hasCat = !!item.category;
-      var catBW = 0, catBH = 38 * S, catFontPx = 16 * S, catTextW = 0;
+      var catBW = 0, catBH = 40 * S, catFontPx = 17 * S;
       if (hasCat) {
         ctx.font = '600 ' + Math.round(catFontPx) + 'px ' + F_SANS;
-        catTextW = ctx.measureText(item.category).width;
-        catBW = catTextW + 38 * S;
+        var catTextW = ctx.measureText(item.category).width;
+        catBW = catTextW + 40 * S;
       }
 
-      y += 14 * S + logoR;            // y 对齐到 logo 垂直中心
+      var topH = Math.max(logoD, F_BRAND * S + 12 * S);  // 顶部行高
+      y += 20 * S + topH;
       if (draw) {
-        var logoCY = y;               // logo 圆心 y
+        var topY = y - topH;            // 顶部内容起点
+        // logo：方形完整显示（不 clip）
         if (hasLogo) {
-          g.save();
-          g.beginPath(); g.arc(PAD + logoR, logoCY, logoR, 0, Math.PI * 2); g.closePath(); g.clip();
-          g.drawImage(logoImg, PAD, logoCY - logoR, logoD, logoD);
-          g.restore();
+          g.drawImage(logoImg, PAD, topY + (topH - logoD) / 2, logoD, logoD);
         }
-        // 品牌名与 logo 垂直居中对齐
+        // 竖分隔线：logo 右侧
+        var ruleX = PAD + logoD + 20 * S;
+        g.fillStyle = LINE_C;
+        g.fillRect(ruleX, topY + 8 * S, 1, topH - 16 * S);
+        // 品牌名：竖线右侧，垂直居中
         g.font = brandFont;
         g.fillStyle = INK;
         g.textBaseline = 'middle';
-        g.fillText('每日销售成长分享', PAD + logoD + 22 * S, logoCY);
+        g.fillText('每日销售成长分享', ruleX + 20 * S, topY + topH / 2);
         g.textBaseline = 'alphabetic';
+        // 品牌名下小英文副标（杂志感）
+        g.font = '500 ' + Math.round(11 * S) + 'px ' + F_SANS;
+        g.fillStyle = FAINT;
+        g.fillText('DAILY  SALES  PLAYBOOK', ruleX + 20 * S, topY + topH / 2 + 22 * S);
 
-        // 分类胶囊：右上角，与 logo 垂直居中
+        // 分类胶囊：右上角
         if (hasCat) {
           var cx = W - PAD - catBW;
-          var cy = logoCY - catBH / 2;
-          g.strokeStyle = ACCENT; g.lineWidth = 1.6;
+          var cy = topY + (topH - catBH) / 2;
+          g.strokeStyle = ACCENT; g.lineWidth = 1.8;
           roundRect(g, cx, cy, catBW, catBH, catBH / 2); g.stroke();
           g.fillStyle = ACCENT;
           g.font = '600 ' + Math.round(catFontPx) + 'px ' + F_SANS;
-          g.fillText(item.category, cx + 19 * S, cy + 25 * S);
+          g.fillText(item.category, cx + 20 * S, cy + 27 * S);
         }
 
-        drawRule(g, PAD, maxW, y + logoR + 24 * S, LINE_C);
+        drawRule(g, PAD, maxW, y + 26 * S, LINE_C);
       }
-      y += logoR + 24 * S + 34 * S;
+      y += 26 * S + 30 * S;
 
       // --- 标题（左对齐深黑大粗体，绝对主角）---
       var tFont = '700 ' + Math.round(F_TITLE * S) + 'px ' + F_SERIF;
