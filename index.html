@@ -52,7 +52,7 @@ body::before {
 
 .serif { font-family: 'Noto Serif SC', Georgia, 'Times New Roman', 'Songti SC', 'STSong', 'SimSun', serif; }
 
-/* ===== 顶部报头（随页面正常滚动）===== */
+/* ===== 顶部报头（跟卡片同款版式）===== */
 .site-head {
   position: relative;
   z-index: 100;
@@ -60,26 +60,39 @@ body::before {
     radial-gradient(720px 260px at 50% -8%, rgba(176,138,69,0.08), transparent 65%),
     linear-gradient(180deg, #faf7f0 0%, var(--paper) 100%);
   border-bottom: 1px solid var(--line-soft);
-  padding: 26px 18px 20px;
-  text-align: center;
+  padding: 30px 18px 18px;
 }
-.site-head .masthead { margin-bottom: 22px; }
-.site-head .mh-top {
-  display: flex; align-items: center; justify-content: center; gap: 14px;
-  margin-bottom: 16px;
+.head-mast {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  margin: 0 auto 18px;
+  max-width: 560px;
 }
-.site-head .mh-rule { flex: 0 0 34px; height: 1px; background: var(--gold); opacity: 0.55; }
-.site-head .mh-eng {
-  font-size: 10px; font-weight: 600; letter-spacing: 3.5px;
-  color: var(--gold); white-space: nowrap;
+.head-logo {
+  width: 64px; height: 64px; flex: 0 0 auto;
+  border-radius: 14px;
 }
-.site-head .brand-title {
+.head-divider {
+  width: 1px; height: 44px; margin: 0 18px;
+  background: var(--line); flex: 0 0 auto;
+}
+.head-title-block { flex: 0 0 auto; text-align: left; }
+.head-title-block .brand-title {
   font-family: 'Noto Serif SC', Georgia, 'Songti SC', 'STSong', serif;
-  font-size: 34px; font-weight: 600; letter-spacing: 3px; line-height: 1.2;
+  font-size: 30px; font-weight: 600; letter-spacing: 2px; line-height: 1.1;
   color: var(--ink);
 }
+.head-title-block .brand-eyebrow {
+  margin-top: 7px; font-size: 10px; font-weight: 600;
+  letter-spacing: 3.5px; color: var(--gold); opacity: 0.85;
+}
 .site-head .subtitle {
-  margin-top: 12px; font-size: 13px; color: var(--ink-2); letter-spacing: 0.5px;
+  text-align: center;
+  margin: 0 auto 18px;
+  font-size: 13px; color: var(--ink-2); letter-spacing: 0.5px;
+  max-width: 660px;
 }
 .site-head .subtitle strong { color: var(--accent); font-weight: 700; }
 .site-head .date-select {
@@ -273,17 +286,19 @@ body::before {
 .article .foot-rule { width: 100%; height: 1px; background: var(--line-soft); margin-top: 34px; }
 
 @media (max-width: 560px) {
-  .site-head { padding: 18px 14px 16px; }
-  .site-head .masthead { margin-bottom: 16px; }
-  .site-head .mh-top { margin-bottom: 12px; gap: 10px; }
-  .site-head .mh-eng { font-size: 9px; letter-spacing: 2.5px; }
-  .site-head .brand-title { font-size: 26px; letter-spacing: 2px; }
-  .site-head .subtitle { margin-top: 9px; font-size: 12px; }
+  .site-head { padding: 20px 14px 14px; }
+  .head-mast { margin-bottom: 14px; }
+  .head-logo { width: 50px; height: 50px; border-radius: 12px; }
+  .head-divider { height: 34px; margin: 0 14px; }
+  .head-title-block .brand-title { font-size: 23px; letter-spacing: 1.5px; }
+  .head-title-block .brand-eyebrow { font-size: 9px; letter-spacing: 2.5px; margin-top: 5px; }
+  .site-head .subtitle { font-size: 12px; margin-bottom: 14px; }
   .controls-row .row-label { display: none; }
   .article { padding: 30px 24px; border-radius: 14px; }
   .article h2 { font-size: 23px; line-height: 1.4; }
   .insight { font-size: 19px; }
   .content { padding: 24px 16px 100px; }
+  .shared-badge { top: 14px; right: 16px; font-size: 10px; padding: 4px 9px 4px 7px; }
 }
 
 /* ===== 卡片保存弹层 ===== */
@@ -300,15 +315,15 @@ body::before {
 <body>
 
 <div class="site-head" id="controls">
-  <div class="masthead">
-    <div class="mh-top">
-      <span class="mh-rule"></span>
-      <span class="mh-eng">THE DAILY SALES PLAYBOOK</span>
-      <span class="mh-rule"></span>
+  <div class="head-mast">
+    <img class="head-logo" src="logo.png" alt="得米">
+    <div class="head-divider"></div>
+    <div class="head-title-block">
+      <h1 class="brand-title">每日销售成长分享</h1>
+      <div class="brand-eyebrow">DAILY SALES PLAYBOOK</div>
     </div>
-    <h1 class="brand-title">每日销售成长分享</h1>
-    <div class="subtitle">不灌鸡汤，只给能落地的认知 · 共 <strong id="stat-total">0</strong> 篇</div>
   </div>
+  <div class="subtitle">不灌鸡汤，只给能落地的认知 · 共 <strong id="stat-total">0</strong> 篇</div>
   <div class="controls-row">
     <div class="chips" id="categoryChips" aria-label="分类筛选"></div>
     <select class="date-select" id="dateSelect" aria-label="选择日期"></select>
@@ -758,38 +773,41 @@ function generateCardImage(item, callback) {
         catBW = catTextW + 40 * S;
       }
 
-      var topH = Math.max(logoD, F_BRAND * S + 12 * S);  // 顶部行高
-      y += 20 * S + topH;
+      // 顶部行高：容纳 logo + 品牌名(上) + 小英文副标(下) 三层不重叠
+      var topH = logoD + 24 * S;
+      y += 22 * S + topH;
       if (draw) {
         var topY = y - topH;            // 顶部内容起点
-        // logo：方形完整显示（不 clip）
+        // logo：方形完整显示（不 clip），与文字上下居中
         if (hasLogo) {
-          g.drawImage(logoImg, PAD, topY + (topH - logoD) / 2, logoD, logoD);
+          g.drawImage(logoImg, PAD, topY, logoD, logoD);
         }
         // 竖分隔线：logo 右侧
         var ruleX = PAD + logoD + 20 * S;
         g.fillStyle = LINE_C;
-        g.fillRect(ruleX, topY + 8 * S, 1, topH - 16 * S);
-        // 品牌名：竖线右侧，垂直居中
+        g.fillRect(ruleX, topY + 14 * S, 1, topH - 28 * S);
+        // 品牌名：竖线右侧，垂直居中偏上
         g.font = brandFont;
         g.fillStyle = INK;
-        g.textBaseline = 'middle';
-        g.fillText('每日销售成长分享', ruleX + 20 * S, topY + topH / 2);
         g.textBaseline = 'alphabetic';
-        // 品牌名下小英文副标（杂志感）
+        var nameY = topY + topH / 2 - 2 * S;
+        g.fillText('每日销售成长分享', ruleX + 20 * S, nameY);
+        // 品牌名下小英文副标（贴底部留 14px）
         g.font = '500 ' + Math.round(11 * S) + 'px ' + F_SANS;
         g.fillStyle = FAINT;
-        g.fillText('DAILY  SALES  PLAYBOOK', ruleX + 20 * S, topY + topH / 2 + 22 * S);
+        g.fillText('DAILY  SALES  PLAYBOOK', ruleX + 20 * S, topY + topH - 16 * S);
 
-        // 分类胶囊：右上角
+        // 分类胶囊：右上角，与品牌名垂直居中
         if (hasCat) {
           var cx = W - PAD - catBW;
-          var cy = topY + (topH - catBH) / 2;
+          var cy = nameY - 22 * S;  // 跟品牌名基线对齐
           g.strokeStyle = ACCENT; g.lineWidth = 1.8;
           roundRect(g, cx, cy, catBW, catBH, catBH / 2); g.stroke();
           g.fillStyle = ACCENT;
           g.font = '600 ' + Math.round(catFontPx) + 'px ' + F_SANS;
-          g.fillText(item.category, cx + 20 * S, cy + 27 * S);
+          g.textBaseline = 'middle';
+          g.fillText(item.category, cx + 20 * S, cy + catBH / 2 + 1 * S);
+          g.textBaseline = 'alphabetic';
         }
 
         drawRule(g, PAD, maxW, y + 26 * S, LINE_C);
