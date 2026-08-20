@@ -256,19 +256,6 @@ body::before {
   letter-spacing: 0;
 }
 
-/* 举个例子 —— 引用块 */
-.example {
-  position: relative;
-  background: var(--paper-2);
-  border: 1px solid var(--line-soft);
-  border-radius: 14px;
-  padding: 22px 24px;
-  margin-bottom: 30px;
-  font-size: 15px; color: var(--ink); line-height: 1.9;
-}
-.example .k { margin-bottom: 8px; display: block; }
-.example .say { color: var(--ink-2); }
-
 /* 今日行动 */
 .action {
   background: var(--accent-soft);
@@ -516,7 +503,6 @@ function renderCard(item) {
     (item.scene ? '<p class="scene"><span class="k">真实场景</span>' + esc(item.scene) + '</p>' : '') +
     (item.insight ? '<div class="insight"><span class="k">关键认知</span>' + esc(item.insight) + '</div>' : '') +
     (methodsHtml ? '<div class="methods"><span class="k">实战方法</span>' + methodsHtml + '</div>' : '') +
-    (item.example ? '<div class="example"><span class="k">举个例子</span><span class="say">' + esc(item.example) + '</span></div>' : '') +
     (item.action ? '<div class="action"><span class="k">今日行动</span>' + esc(item.action) + '</div>' : '') +
     (item.review ? '<p class="review"><span class="k">今日复盘</span>' + esc(item.review) + '</p>' : '') +
     '<div class="foot-rule"></div>' +
@@ -847,7 +833,6 @@ function generateCardImage(item, callback) {
       s += (item.scene || '') ? (item.scene.length * 1.1) : 0;
       s += (item.insight || '').length * 1.4;
       (item.methods || []).forEach(function(m) { s += m.length; });
-      s += (item.example || '').length;
       s += (item.action || '').length;
       s += (item.review || '').length;
       return s;
@@ -889,13 +874,14 @@ function generateCardImage(item, callback) {
       var SUB = '#6f6a63';           // 次要
       var FAINT = '#a8a29a';         // 弱提示
       var LINE_C = '#ececec';        // 分隔线
-      var EX_BG = '#f6f5f4';         // 举例块底
 
       // --- 顶部三段：左方形logo + 细竖分隔 + 品牌名  |  右上分类胶囊 ---
       var logoD = 144 * S;             // 方形 logo 边长（不裁切，保留完整得米字样）
-      var brandFont = '600 ' + Math.round(F_BRAND * S) + 'px ' + F_SERIF;
+      var brandText = '每日销售成长分享';
+      var brandSize = F_BRAND * S;
+      var brandFont = '600 ' + Math.round(brandSize) + 'px ' + F_SERIF;
       ctx.font = brandFont;
-      var brandTextW = ctx.measureText('每日销售成长分享').width;
+      var brandTextW = ctx.measureText(brandText).width;
 
       // 分类胶囊（量尺寸）
       var hasCat = !!item.category;
@@ -904,6 +890,15 @@ function generateCardImage(item, callback) {
         ctx.font = '600 ' + Math.round(catFontPx) + 'px ' + F_SANS;
         var catTextW = ctx.measureText(item.category).width;
         catBW = catTextW + 40 * S;
+      }
+
+      // 品牌名自适应：以「分类胶囊左边界」为上限缩字号，避免右上角重叠
+      var brandX = PAD + logoD + 36 * S;
+      var brandRightLimit = W - PAD - (hasCat ? catBW + 18 * S : 0);
+      var brandAvail = brandRightLimit - brandX;
+      if (brandTextW > brandAvail && brandAvail > 0) {
+        brandSize = Math.floor(brandSize * brandAvail / brandTextW);
+        brandFont = '600 ' + Math.round(brandSize) + 'px ' + F_SERIF;
       }
 
       // 顶部行高：logo + 品牌名（不要英文副标），更紧凑
@@ -919,12 +914,12 @@ function generateCardImage(item, callback) {
         var ruleX = PAD + logoD + 18 * S;
         g.fillStyle = LINE_C;
         g.fillRect(ruleX, topY + 16 * S, 1, topH - 32 * S);
-        // 品牌名（主题，最大）：衬线 + 中粗 600 + 紧凑字距
-        g.font = '600 ' + Math.round(F_BRAND * S) + 'px "Noto Serif SC", "STSong", "SimSun", serif';
+        // 品牌名（主题，最大）：衬线 + 中粗 600 + 紧凑字距（自适应字号防重叠）
+        g.font = '600 ' + Math.round(brandSize) + 'px "Noto Serif SC", "STSong", "SimSun", serif';
         g.fillStyle = INK;
         g.textBaseline = 'middle';
         var nameCY = topY + topH / 2;
-        g.fillText('每日销售成长分享', ruleX + 18 * S, nameCY);
+        g.fillText(brandText, ruleX + 18 * S, nameCY);
         g.textBaseline = 'alphabetic';
 
         // 分类胶囊：右上角（与品牌名同行）
@@ -1026,26 +1021,6 @@ function generateCardImage(item, callback) {
           y += Math.max(mH, 34 * S + 18 * S);
         });
         y += 22 * S;
-      }
-
-      // --- 举个例子（浅灰块 + 主色小标签）---
-      if (item.example) {
-        var exLines = countLines('400 ' + (F_BODY * S) + 'px ' + F_SANS, item.example, maxW - 60 * S);
-        var exPadV = 26 * S, exPadH = 30 * S;
-        var exH = exPadV * 2 + LH_LABEL * S + 12 * S + (exLines - 1) * LH_BODY * S + F_BODY * S;
-        if (draw) {
-          roundStroke(g, PAD, y, maxW, exH, 16, EX_BG, null);
-          g.font = '600 ' + Math.round(F_LABEL * S) + 'px ' + F_SANS;
-          g.fillStyle = ACCENT;
-          g.fillText('举个例子', PAD + exPadH, y + exPadV + F_LABEL * S);
-          g.fillStyle = BODY_C;
-          g.font = '400 ' + Math.round(F_BODY * S) + 'px ' + F_SANS;
-          var eiy = y + exPadV + LH_LABEL * S + 12 * S + F_BODY * S;
-          wrapText(g, item.example, maxW - 60 * S).forEach(function(ln) {
-            g.fillText(ln, PAD + exPadH, eiy); eiy += LH_BODY * S;
-          });
-        }
-        y += exH + 26 * S;
       }
 
       // --- 今日行动（珊瑚红实底 CTA）---
