@@ -820,266 +820,213 @@ function roundStroke(ctx, x, y, w, h, r, fill, stroke) {
 
 function generateCardImage(item, callback) {
   function run(logoImg) {
-    var W = 750, PAD = 60, maxW = W - PAD * 2;
+    // ===== 9:16 竖版画布：900 x 1600，输出 1800 x 3200（iOS 面积限内）=====
+    var W = 900, H = 1600, PAD = 64;
     var SCALE = 2;
     var c = document.createElement('canvas');
-    var ctx = c.getContext('2d');          // 唯一的 context：测量与绘制共用
+    var ctx = c.getContext('2d');
     var hasLogo = logoImg && logoImg.naturalWidth > 0;
 
-    // ============ 内容多寡评分 → 密度系数 S ============
-    function contentScore() {
-      var s = 0;
-      s += (item.title || '').length * 2;
-      s += (item.scene || '') ? (item.scene.length * 1.1) : 0;
-      s += (item.insight || '').length * 1.4;
-      (item.methods || []).forEach(function(m) { s += m.length; });
-      s += (item.action || '').length;
-      s += (item.review || '').length;
-      return s;
-    }
-    var S = 1.0, sc = contentScore();
-    if (sc > 330)      S = 0.78;
-    else if (sc > 250) S = 0.86;
-    else if (sc > 180) S = 0.94;
-    else if (sc > 120) S = 1.02;
-    else if (sc > 70)  S = 1.10;
-    else               S = 1.18;
+    var ACCENT = '#e05545';        // 珊瑚红主色
+    var ACCENT_SOFT = '#fdf0ec';   // 金句卡浅底
+    var INK = '#181818';           // 标题
+    var BODY_C = '#3d3a36';        // 正文
+    var SUB = '#6f6a63';           // 次要
+    var FAINT = '#a8a29a';         // 弱提示
+    var LINE_C = '#ececec';        // 分隔线
 
-    // 字号底座（S=1 时）—— 主题主导：品牌名=主题最大，标题=次要自然
-    var F_TITLE = 38, LH_TITLE = 56;      // 大标题（次要，自然黑体）
-    var F_QUOTE = 29, LH_QUOTE = 48;      // 金句(认知)
-    var F_BODY  = 24, LH_BODY  = 40;      // 正文
-    var F_LABEL = 15, LH_LABEL = 22;      // 小标签
-    var F_BRAND = 62;                     // 品牌名（主题，最大）
-    var F_FOOT  = 16;                     // 页脚
-    var F_NUM   = 19;                     // 方法编号
+    // 字号底座（S=1）
+    var F_BRAND = 44;                        // 品牌名（衬线）
+    var F_TITLE = 54, LH_TITLE = 76;         // 大标题（衬线）
+    var F_QUOTE = 32, LH_QUOTE = 50;         // 金句（衬线）
+    var F_BODY  = 22, LH_BODY  = 38;         // 正文
+    var F_LABEL = 15;                        // 小标签
+    var F_FOOT  = 16;                        // 页脚
+    var F_NUM   = 17;                        // 方法编号
 
-    // 计算某字体下文本的行数
     function countLines(font, text, width) {
       ctx.font = font;
       return wrapText(ctx, text, width).length;
     }
 
-    // ============ 统一布局函数：measure 或 draw ============
-    // 白底大字报风：顶部品牌+日期一行 → 珊瑚红描边分类胶囊 →
-    // 深黑左对齐大标题(主角)+主色短粗线 → 浅珊瑚金句卡 → 场景 →
-    // 方法(主色编号方块) → 举例(浅灰块) → 珊瑚红行动CTA → 复盘 → 页脚。
+    // ===== 统一布局：眉栏 → 标题 → 金句卡 → 场景 → 方法 → 行动 → 复盘 → 页脚 =====
+    // draw=false 时只测量，返回内容底部 y
     function layout(S, draw) {
-      var y = 0;
       var g = draw ? ctx : null;
-      var ACCENT = '#e05545';        // 珊瑚红主色
-      var ACCENT_SOFT = '#fdf0ec';   // 金句卡浅底
-      var INK = '#181818';           // 标题
-      var BODY_C = '#3d3a36';        // 正文
-      var SUB = '#6f6a63';           // 次要
-      var FAINT = '#a8a29a';         // 弱提示
-      var LINE_C = '#ececec';        // 分隔线
+      var maxW = W - PAD * 2;
+      var yMax = H - 96;   // 内容底线（页脚区以上）
 
-      // --- 顶部三段：左方形logo + 细竖分隔 + 品牌名  |  右上分类胶囊 ---
-      var logoD = 144 * S;             // 方形 logo 边长（不裁切，保留完整得米字样）
-      var brandText = '每日销售成长分享';
-      var brandSize = F_BRAND * S;
-      var brandFont = '600 ' + Math.round(brandSize) + 'px ' + F_SERIF;
-      ctx.font = brandFont;
-      var brandTextW = ctx.measureText(brandText).width;
-
-      // 分类胶囊（量尺寸）
-      var hasCat = !!item.category;
-      var catBW = 0, catBH = 40 * S, catFontPx = 17 * S;
-      if (hasCat) {
-        ctx.font = '600 ' + Math.round(catFontPx) + 'px ' + F_SANS;
-        var catTextW = ctx.measureText(item.category).width;
-        catBW = catTextW + 40 * S;
-      }
-
-      // 品牌名自适应：以「分类胶囊左边界」为上限缩字号，避免右上角重叠
-      var brandX = PAD + logoD + 36 * S;
-      var brandRightLimit = W - PAD - (hasCat ? catBW + 18 * S : 0);
-      var brandAvail = brandRightLimit - brandX;
-      if (brandTextW > brandAvail && brandAvail > 0) {
-        brandSize = Math.floor(brandSize * brandAvail / brandTextW);
-        brandFont = '600 ' + Math.round(brandSize) + 'px ' + F_SERIF;
-      }
-
-      // 顶部行高：logo + 品牌名（不要英文副标），更紧凑
-      var topH = logoD;
-      y += 24 * S + topH;
+      // ---- 眉栏：左 logo + 竖线 + 品牌名 | 右上分类胶囊 ----
+      var mastY = 56, mastH = 88 * S;
       if (draw) {
-        var topY = y - topH;            // 顶部内容起点
-        // logo：方形完整显示（不 clip）
-        if (hasLogo) {
-          g.drawImage(logoImg, PAD, topY, logoD, logoD);
-        }
-        // 竖分隔线：logo 右侧
-        var ruleX = PAD + logoD + 18 * S;
+        if (hasLogo) g.drawImage(logoImg, PAD, mastY, mastH, mastH);
+        var ruleX = PAD + mastH + 18 * S;
         g.fillStyle = LINE_C;
-        g.fillRect(ruleX, topY + 16 * S, 1, topH - 32 * S);
-        // 品牌名（主题，最大）：衬线 + 中粗 600 + 紧凑字距（自适应字号防重叠）
-        g.font = '600 ' + Math.round(brandSize) + 'px "Noto Serif SC", "STSong", "SimSun", serif';
+        g.fillRect(ruleX, mastY + 10, 1, mastH - 20);
+        g.font = '600 ' + Math.round(F_BRAND * S) + 'px ' + F_SERIF;
         g.fillStyle = INK;
         g.textBaseline = 'middle';
-        var nameCY = topY + topH / 2;
-        g.fillText(brandText, ruleX + 18 * S, nameCY);
+        g.fillText('每日销售成长分享', ruleX + 20 * S, mastY + mastH / 2);
         g.textBaseline = 'alphabetic';
-
-        // 分类胶囊：右上角（与品牌名同行）
-        if (hasCat) {
-          var cx = W - PAD - catBW;
-          var cy = nameCY - catBH / 2;
-          g.strokeStyle = ACCENT; g.lineWidth = 1.8;
-          roundRect(g, cx, cy, catBW, catBH, catBH / 2); g.stroke();
+        if (item.category) {
+          g.font = '600 ' + Math.round(17 * S) + 'px ' + F_SANS;
+          var ctw = g.measureText(item.category).width;
+          var cbw = ctw + 44 * S, cbh = 42 * S;
+          var cx0 = W - PAD - cbw, cy0 = mastY + (mastH - cbh) / 2;
+          g.strokeStyle = ACCENT; g.lineWidth = 2;
+          roundRect(g, cx0, cy0, cbw, cbh, cbh / 2); g.stroke();
           g.fillStyle = ACCENT;
-          g.font = '600 ' + Math.round(catFontPx) + 'px ' + F_SANS;
           g.textBaseline = 'middle';
-          g.fillText(item.category, cx + 20 * S, cy + catBH / 2 + 1 * S);
+          g.fillText(item.category, cx0 + 22 * S, cy0 + cbh / 2 + 1);
           g.textBaseline = 'alphabetic';
         }
-
-        drawRule(g, PAD, maxW, y + 22 * S, LINE_C);
+        drawRule(g, PAD, maxW, mastY + mastH + 26, LINE_C);
       }
-      y += 22 * S + 30 * S;
+      var y = mastY + mastH + 26 + 44;
 
-
-
-      // --- 标题（次要，自然黑体）---
-      var tFont = '500 ' + Math.round(F_TITLE * S) + 'px "Noto Sans SC", "PingFang SC", "Hiragino Sans GB", sans-serif';
-      var tLinesArr = (function() { ctx.font = tFont; return wrapText(ctx, item.title, maxW); })();
-      // 孤字平衡：末行 ≤2 字时收窄宽度重排，避免单字独占一行
-      if (tLinesArr.length > 1 && tLinesArr[tLinesArr.length - 1].length <= 2) {
+      // ---- 大标题（衬线左对齐）----
+      var tFont = '600 ' + Math.round(F_TITLE * S) + 'px ' + F_SERIF;
+      var tLines = (function () { ctx.font = tFont; return wrapText(ctx, item.title || '', maxW); })();
+      // 孤字平衡：末行 ≤2 字时收窄重排
+      if (tLines.length > 1 && tLines[tLines.length - 1].length <= 2) {
         ctx.font = tFont;
-        var t2 = wrapText(ctx, item.title, maxW - F_TITLE * S * 2.6);
-        if (t2.length === tLinesArr.length && t2[t2.length - 1].length > 2) tLinesArr = t2;
+        var t2 = wrapText(ctx, item.title, maxW - F_TITLE * S * 1.4);
+        if (t2.length === tLines.length && t2[t2.length - 1].length > 2) tLines = t2;
       }
       if (draw) {
         g.font = tFont; g.fillStyle = INK;
         var ty = y + F_TITLE * S;
-        tLinesArr.forEach(function(ln) { g.fillText(ln, PAD, ty); ty += LH_TITLE * S; });
+        tLines.forEach(function (ln) { g.fillText(ln, PAD, ty); ty += LH_TITLE * S; });
       }
-      y += (tLinesArr.length - 1) * LH_TITLE * S + F_TITLE * S + 18 * S;
-      // 标题下主色短粗线（力量感）
-      if (draw) { g.fillStyle = ACCENT; roundRect(g, PAD + 2, y, 62 * S, 6 * S, 3 * S); g.fill(); }
-      y += 6 * S + 32 * S;
+      y += (tLines.length - 1) * LH_TITLE * S + F_TITLE * S + 24 * S;
 
-      // --- 关键认知：浅珊瑚金句卡（左竖条+浅底，深色衬线大字）---
+      // 标题下红短粗线
+      if (draw) { g.fillStyle = ACCENT; roundRect(g, PAD + 2, y, 76 * S, 7 * S, 3.5 * S); g.fill(); }
+      y += 7 * S + 36 * S;
+
+      // ---- 关键认知：浅珊瑚金句卡（左红条 + 衬线大字）----
       if (item.insight) {
         var qFont = '600 ' + Math.round(F_QUOTE * S) + 'px ' + F_SERIF;
-        var qLines = countLines(qFont, item.insight, maxW - 76 * S);
-        var qPadV = 30 * S, qPadH = 36 * S;
+        var qLines = countLines(qFont, item.insight, maxW - 112 * S);
+        var qPadV = 32 * S, qPadH = 36 * S;
         var qH = qPadV * 2 + (qLines - 1) * LH_QUOTE * S + F_QUOTE * S;
         if (draw) {
-          roundStroke(g, PAD, y, maxW, qH, 16, ACCENT_SOFT, null);
+          roundStroke(g, PAD, y, maxW, qH, 18 * S, ACCENT_SOFT, null);
           g.fillStyle = ACCENT;
-          roundRect(g, PAD, y, 7, qH, 3); g.fill();
+          roundRect(g, PAD, y, 6 * S, qH, 3 * S); g.fill();
           g.font = qFont; g.fillStyle = INK;
           var qy = y + qPadV + F_QUOTE * S;
-          wrapText(g, item.insight, maxW - 76 * S).forEach(function(ln) {
+          wrapText(g, item.insight, maxW - 112 * S).forEach(function (ln) {
             g.fillText(ln, PAD + qPadH, qy); qy += LH_QUOTE * S;
           });
         }
-        y += qH + 30 * S;
+        y += qH + 36 * S;
       }
 
-      // --- 真实场景（灰色小标签 + 正文段落）---
+      // ---- 真实场景 ----
       if (item.scene) {
         if (draw) {
-          g.font = '600 ' + Math.round(14 * S) + 'px ' + F_SANS;
+          g.font = '600 ' + Math.round(F_LABEL * S) + 'px ' + F_SANS;
           g.fillStyle = FAINT;
-          g.fillText('真实场景', PAD, y);
+          drawSpacedText(g, '真实场景', PAD, y + F_LABEL * S, 3);
         }
-        y += LH_LABEL * S + 6 * S;
-        if (draw) drawParagraph(g, item.scene, SUB, PAD, maxW, y, F_BODY * S, LH_BODY * S);
-        y += countLines('400 ' + (F_BODY * S) + 'px ' + F_SANS, item.scene, maxW) * LH_BODY * S + 24 * S;
+        y += F_LABEL * S + 18 * S;
+        var sLines = countLines('400 ' + Math.round(F_BODY * S) + 'px ' + F_SANS, item.scene, maxW - 24 * S);
+        if (draw) drawParagraph(g, item.scene, SUB, PAD, maxW - 24 * S, y + F_BODY * S, F_BODY * S, LH_BODY * S);
+        y += sLines * LH_BODY * S + 10 * S;
       }
 
-      // --- 落地方法（标签统一灰色小字 + 主色编号方块 + 深色文字）---
+      // ---- 落地方法（红编号方块 + 正文）----
       if (item.methods && item.methods.length) {
         if (draw) {
-          g.font = '600 ' + Math.round(14 * S) + 'px ' + F_SANS;
+          g.font = '600 ' + Math.round(F_LABEL * S) + 'px ' + F_SANS;
           g.fillStyle = FAINT;
-          g.fillText('落地方法', PAD, y);
+          drawSpacedText(g, '落地方法', PAD, y + F_LABEL * S, 3);
         }
-        y += LH_LABEL * S + 14 * S;
-        item.methods.forEach(function(m, i) {
+        y += F_LABEL * S + 20 * S;
+        item.methods.forEach(function (m, i) {
           var num = (i < 9 ? '0' : '') + (i + 1);
-          var mLines = countLines('400 ' + (F_BODY * S) + 'px ' + F_SANS, m, maxW - 66 * S);
-          var mH = (mLines - 1) * LH_BODY * S + F_BODY * S + 18 * S;
+          var mFont = '400 ' + Math.round(F_BODY * S) + 'px ' + F_SANS;
+          var mLines = countLines(mFont, m, maxW - 72 * S);
+          var bs = 32 * S;
+          var mH = Math.max(bs, mLines * LH_BODY * S);
           if (draw) {
-            var bs = 34 * S;
             g.fillStyle = ACCENT;
             roundRect(g, PAD, y, bs, bs, 8 * S); g.fill();
             g.fillStyle = '#ffffff';
             g.font = '700 ' + Math.round(F_NUM * S) + 'px ' + F_SANS;
             var nw = g.measureText(num).width;
-            g.fillText(num, PAD + (bs - nw) / 2, y + bs - 10 * S);
-            g.fillStyle = BODY_C;
-            g.font = '400 ' + Math.round(F_BODY * S) + 'px ' + F_SANS;
-            var my = y + F_BODY * S + 2 * S;
-            wrapText(g, m, maxW - 66 * S).forEach(function(ln) {
-              g.fillText(ln, PAD + 50 * S, my); my += LH_BODY * S;
+            g.fillText(num, PAD + (bs - nw) / 2, y + bs - 9 * S);
+            g.fillStyle = BODY_C; g.font = mFont;
+            var my = y + (mH - mLines * LH_BODY * S) / 2 + F_BODY * S;
+            wrapText(g, m, maxW - 72 * S).forEach(function (ln) {
+              g.fillText(ln, PAD + 48 * S, my); my += LH_BODY * S;
             });
           }
-          y += Math.max(mH, 34 * S + 18 * S);
+          y += mH + 15 * S;
         });
-        y += 22 * S;
+        y += 14 * S;
       }
 
-      // --- 今日行动（珊瑚红实底 CTA）---
+      // ---- 今日行动（红底 CTA）----
       if (item.action) {
-        var acLines = countLines('600 ' + (F_BODY * S) + 'px ' + F_SANS, item.action, maxW - 72 * S);
-        var acPadV = 30 * S, acPadH = 36 * S;
-        var acH = acPadV * 2 + LH_LABEL * S + 12 * S + (acLines - 1) * LH_BODY * S + F_BODY * S;
+        var aFont = '600 ' + Math.round(F_BODY * S) + 'px ' + F_SANS;
+        var aLines = countLines(aFont, item.action, maxW - 88 * S);
+        var aPadV = 26 * S, aPadH = 32 * S;
+        var aH = aPadV * 2 + F_LABEL * S + 10 * S + (aLines - 1) * LH_BODY * S + F_BODY * S;
         if (draw) {
-          roundRect(g, PAD, y, maxW, acH, 16);
+          roundRect(g, PAD, y, maxW, aH, 16 * S);
           g.fillStyle = ACCENT; g.fill();
           g.fillStyle = 'rgba(255,255,255,0.78)';
-          g.font = '600 ' + Math.round(14 * S) + 'px ' + F_SANS;
-          drawSpacedText(g, '今天就去试', PAD + acPadH, y + acPadV + 14 * S, 2);
-          g.fillStyle = '#ffffff';
-          g.font = '600 ' + Math.round(F_BODY * S) + 'px ' + F_SANS;
-          var aiy = y + acPadV + LH_LABEL * S + 12 * S + F_BODY * S;
-          wrapText(g, item.action, maxW - 72 * S).forEach(function(ln) {
-            g.fillText(ln, PAD + acPadH, aiy); aiy += LH_BODY * S;
+          g.font = '600 ' + Math.round(F_LABEL * S) + 'px ' + F_SANS;
+          drawSpacedText(g, '今天就去试', PAD + aPadH, y + aPadV + F_LABEL * S, 2);
+          g.fillStyle = '#ffffff'; g.font = aFont;
+          var ay = y + aPadV + F_LABEL * S + 10 * S + F_BODY * S;
+          wrapText(g, item.action, maxW - 88 * S).forEach(function (ln) {
+            g.fillText(ln, PAD + aPadH, ay); ay += LH_BODY * S;
           });
         }
-        y += acH + 28 * S;
+        y += aH + 30 * S;
       }
 
-      // --- 今日复盘（灰色小标签 + 一段收尾）---
+      // ---- 今日复盘 ----
       if (item.review) {
         if (draw) {
-          g.font = '600 ' + Math.round(14 * S) + 'px ' + F_SANS;
+          g.font = '600 ' + Math.round(F_LABEL * S) + 'px ' + F_SANS;
           g.fillStyle = FAINT;
-          g.fillText('今日复盘', PAD, y);
+          drawSpacedText(g, '今日复盘', PAD, y + F_LABEL * S, 3);
         }
-        y += LH_LABEL * S + 6 * S;
-        if (draw) drawParagraph(g, item.review, SUB, PAD, maxW, y, F_BODY * S, LH_BODY * S);
-        y += countLines('400 ' + (F_BODY * S) + 'px ' + F_SANS, item.review, maxW) * LH_BODY * S + 30 * S;
+        y += F_LABEL * S + 18 * S;
+        var rLines = countLines('400 ' + Math.round(F_BODY * S) + 'px ' + F_SANS, item.review, maxW - 24 * S);
+        if (draw) drawParagraph(g, item.review, SUB, PAD, maxW - 24 * S, y + F_BODY * S, F_BODY * S, LH_BODY * S);
+        y += rLines * LH_BODY * S;
       }
 
-      // --- 底部页脚：细线 + 左品牌口号 / 右分类胶囊（替代"每日更新"）---
-      if (draw) drawRule(g, PAD, maxW, y, LINE_C);
-      y += 30 * S;
+      // ---- 页脚：细线 + 左口号（不放日期）----
       if (draw) {
+        drawRule(g, PAD, maxW, H - 76, LINE_C);
         g.font = '500 ' + Math.round(F_FOOT * S) + 'px ' + F_SANS;
         g.fillStyle = FAINT;
-        g.fillText('每日销售成长 · 一线实战', PAD, y);
+        g.fillText('每日销售成长 · 一线实战', PAD, H - 40);
       }
-      y += 24 * S;
 
       return y;
     }
 
-    // 测量：仅累计高度，不绘制
-    var totalH_m = Math.round(layout(S, false));
-    var MAX_H = 5000;
-    if (totalH_m > MAX_H) { S = 0.72; totalH_m = Math.round(layout(S, false)); }
-    var totalH = Math.min(totalH_m, MAX_H) + 40;
+    // ---- S 自适应：内容少用大字，超出主体底线则整体缩字号 ----
+    var S = 1.15;
+    var bottom = layout(S, false);
+    var guard = 0;
+    while (bottom > H - 96 && S > 0.56 && guard < 24) {
+      S -= 0.03; guard++;
+      bottom = layout(S, false);
+    }
 
-    // 设置画布尺寸并绘制（同一 ctx）
-    c.width = W * SCALE; c.height = totalH * SCALE;
+    // 设置画布并绘制
+    c.width = W * SCALE; c.height = H * SCALE;
     ctx.setTransform(SCALE, 0, 0, SCALE, 0, 0);
     ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, W, totalH);
+    ctx.fillRect(0, 0, W, H);
     layout(S, true);
 
     callback(c.toDataURL('image/png'));
