@@ -836,7 +836,7 @@ function generateCardImage(item, callback) {
     var LINE_C = '#ececec';        // 分隔线
 
     // 字号底座（S=1）
-    var F_BRAND = 44;                        // 品牌名（衬线）
+    var F_BRAND = 58;                        // 品牌名（衬线，固定不随S缩放）
     var F_TITLE = 54, LH_TITLE = 76;         // 大标题（衬线）
     var F_QUOTE = 32, LH_QUOTE = 50;         // 金句（衬线）
     var F_BODY  = 22, LH_BODY  = 38;         // 正文
@@ -856,30 +856,18 @@ function generateCardImage(item, callback) {
       var maxW = W - PAD * 2;
       var yMax = H - 96;   // 内容底线（页脚区以上）
 
-      // ---- 眉栏：左 logo + 竖线 + 品牌名 | 右上分类胶囊 ----
-      var mastY = 56, mastH = 88 * S;
+      // ---- 眉栏：左 logo + 竖线 + 品牌名（核心主题，固定大字号，不随 S 缩放）----
+      var mastY = 56, mastH = 104;
       if (draw) {
         if (hasLogo) g.drawImage(logoImg, PAD, mastY, mastH, mastH);
-        var ruleX = PAD + mastH + 18 * S;
+        var ruleX = PAD + mastH + 20;
         g.fillStyle = LINE_C;
-        g.fillRect(ruleX, mastY + 10, 1, mastH - 20);
-        g.font = '600 ' + Math.round(F_BRAND * S) + 'px ' + F_SERIF;
+        g.fillRect(ruleX, mastY + 12, 1, mastH - 24);
+        g.font = '600 ' + F_BRAND + 'px ' + F_SERIF;
         g.fillStyle = INK;
         g.textBaseline = 'middle';
-        g.fillText('每日销售成长分享', ruleX + 20 * S, mastY + mastH / 2);
+        g.fillText('每日销售成长分享', ruleX + 22, mastY + mastH / 2);
         g.textBaseline = 'alphabetic';
-        if (item.category) {
-          g.font = '600 ' + Math.round(17 * S) + 'px ' + F_SANS;
-          var ctw = g.measureText(item.category).width;
-          var cbw = ctw + 44 * S, cbh = 42 * S;
-          var cx0 = W - PAD - cbw, cy0 = mastY + (mastH - cbh) / 2;
-          g.strokeStyle = ACCENT; g.lineWidth = 2;
-          roundRect(g, cx0, cy0, cbw, cbh, cbh / 2); g.stroke();
-          g.fillStyle = ACCENT;
-          g.textBaseline = 'middle';
-          g.fillText(item.category, cx0 + 22 * S, cy0 + cbh / 2 + 1);
-          g.textBaseline = 'alphabetic';
-        }
         drawRule(g, PAD, maxW, mastY + mastH + 26, LINE_C);
       }
       var y = mastY + mastH + 26 + 44;
@@ -1002,12 +990,24 @@ function generateCardImage(item, callback) {
         y += rLines * LH_BODY * S;
       }
 
-      // ---- 页脚：细线 + 左口号（不放日期）----
+      // ---- 页脚：细线 + 左口号 + 右分类胶囊（不放日期）----
       if (draw) {
         drawRule(g, PAD, maxW, H - 76, LINE_C);
         g.font = '500 ' + Math.round(F_FOOT * S) + 'px ' + F_SANS;
         g.fillStyle = FAINT;
         g.fillText('每日销售成长 · 一线实战', PAD, H - 40);
+        if (item.category) {
+          g.font = '600 15px ' + F_SANS;
+          var ctw = g.measureText(item.category).width;
+          var cbw = ctw + 40, cbh = 36;
+          var cx0 = W - PAD - cbw, cy0 = H - 46 - cbh / 2;
+          g.strokeStyle = ACCENT; g.lineWidth = 1.5;
+          roundRect(g, cx0, cy0, cbw, cbh, cbh / 2); g.stroke();
+          g.fillStyle = ACCENT;
+          g.textBaseline = 'middle';
+          g.fillText(item.category, cx0 + 20, cy0 + cbh / 2 + 1);
+          g.textBaseline = 'alphabetic';
+        }
       }
 
       return y;
