@@ -837,7 +837,7 @@ function generateCardImage(item, callback) {
 
     // 字号底座（S=1）
     var F_BRAND = 64;                        // 品牌名（衬线，固定不随S缩放）
-    var F_TITLE = 52, LH_TITLE = 74;         // 大标题（衬线，居中，次于眉栏主题）
+    var F_TITLE = 38, LH_TITLE = 54;         // 大标题（衬线，居中，对齐主页 h2 的视觉比例）
     var F_QUOTE = 32, LH_QUOTE = 50;         // 金句（衬线）
     var F_BODY  = 22, LH_BODY  = 38;         // 正文
     var F_LABEL = 15;                        // 小标签
@@ -892,7 +892,7 @@ function generateCardImage(item, callback) {
       y += (tLines.length - 1) * LH_TITLE * S + F_TITLE * S + 24 * S;
 
       // 标题下红短粗线（居中）
-      if (draw) { g.fillStyle = ACCENT; roundRect(g, (W - 70 * S) / 2, y, 70 * S, 7 * S, 3.5 * S); g.fill(); }
+      if (draw) { g.fillStyle = ACCENT; roundRect(g, (W - 56 * S) / 2, y, 56 * S, 6 * S, 3 * S); g.fill(); }
       y += 7 * S + 36 * S;
 
       // ---- 关键认知：浅珊瑚金句卡（左红条 + 衬线大字）----
