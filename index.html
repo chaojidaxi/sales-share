@@ -836,8 +836,8 @@ function generateCardImage(item, callback) {
     var LINE_C = '#ececec';        // 分隔线
 
     // 字号底座（S=1）
-    var F_BRAND = 58;                        // 品牌名（衬线，固定不随S缩放）
-    var F_TITLE = 54, LH_TITLE = 76;         // 大标题（衬线）
+    var F_BRAND = 64;                        // 品牌名（衬线，固定不随S缩放）
+    var F_TITLE = 64, LH_TITLE = 88;         // 大标题（衬线，居中）
     var F_QUOTE = 32, LH_QUOTE = 50;         // 金句（衬线）
     var F_BODY  = 22, LH_BODY  = 38;         // 正文
     var F_LABEL = 15;                        // 小标签
@@ -857,12 +857,12 @@ function generateCardImage(item, callback) {
       var yMax = H - 96;   // 内容底线（页脚区以上）
 
       // ---- 眉栏：左 logo + 竖线 + 品牌名（核心主题，固定大字号，不随 S 缩放）----
-      var mastY = 56, mastH = 104;
+      var mastY = 52, mastH = 128;
       if (draw) {
         if (hasLogo) g.drawImage(logoImg, PAD, mastY, mastH, mastH);
         var ruleX = PAD + mastH + 20;
         g.fillStyle = LINE_C;
-        g.fillRect(ruleX, mastY + 12, 1, mastH - 24);
+        g.fillRect(ruleX, mastY + 14, 1, mastH - 28);
         g.font = '600 ' + F_BRAND + 'px ' + F_SERIF;
         g.fillStyle = INK;
         g.textBaseline = 'middle';
@@ -872,7 +872,7 @@ function generateCardImage(item, callback) {
       }
       var y = mastY + mastH + 26 + 44;
 
-      // ---- 大标题（衬线左对齐）----
+      // ---- 大标题（衬线，居中）----
       var tFont = '600 ' + Math.round(F_TITLE * S) + 'px ' + F_SERIF;
       var tLines = (function () { ctx.font = tFont; return wrapText(ctx, item.title || '', maxW); })();
       // 孤字平衡：末行 ≤2 字时收窄重排
@@ -884,12 +884,15 @@ function generateCardImage(item, callback) {
       if (draw) {
         g.font = tFont; g.fillStyle = INK;
         var ty = y + F_TITLE * S;
-        tLines.forEach(function (ln) { g.fillText(ln, PAD, ty); ty += LH_TITLE * S; });
+        tLines.forEach(function (ln) {
+          var lw = g.measureText(ln).width;
+          g.fillText(ln, (W - lw) / 2, ty); ty += LH_TITLE * S;
+        });
       }
       y += (tLines.length - 1) * LH_TITLE * S + F_TITLE * S + 24 * S;
 
-      // 标题下红短粗线
-      if (draw) { g.fillStyle = ACCENT; roundRect(g, PAD + 2, y, 76 * S, 7 * S, 3.5 * S); g.fill(); }
+      // 标题下红短粗线（居中）
+      if (draw) { g.fillStyle = ACCENT; roundRect(g, (W - 88 * S) / 2, y, 88 * S, 7 * S, 3.5 * S); g.fill(); }
       y += 7 * S + 36 * S;
 
       // ---- 关键认知：浅珊瑚金句卡（左红条 + 衬线大字）----
@@ -997,15 +1000,15 @@ function generateCardImage(item, callback) {
         g.fillStyle = FAINT;
         g.fillText('每日销售成长 · 一线实战', PAD, H - 40);
         if (item.category) {
-          g.font = '600 15px ' + F_SANS;
+          g.font = '600 18px ' + F_SANS;
           var ctw = g.measureText(item.category).width;
-          var cbw = ctw + 40, cbh = 36;
+          var cbw = ctw + 48, cbh = 44;
           var cx0 = W - PAD - cbw, cy0 = H - 46 - cbh / 2;
-          g.strokeStyle = ACCENT; g.lineWidth = 1.5;
+          g.strokeStyle = ACCENT; g.lineWidth = 2;
           roundRect(g, cx0, cy0, cbw, cbh, cbh / 2); g.stroke();
           g.fillStyle = ACCENT;
           g.textBaseline = 'middle';
-          g.fillText(item.category, cx0 + 20, cy0 + cbh / 2 + 1);
+          g.fillText(item.category, cx0 + 24, cy0 + cbh / 2 + 1);
           g.textBaseline = 'alphabetic';
         }
       }
